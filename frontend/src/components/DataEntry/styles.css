@@ -1,0 +1,15 @@
+.input {
+  width: 50px;
+  & .g-text-input__control_type_input {
+    text-align: center;
+  }
+}
+
+.plus {
+  margin-left: 8px;
+}
+
+.addConstraintsButton {
+  width: fit-content;
+  margin-top: 10px;
+}

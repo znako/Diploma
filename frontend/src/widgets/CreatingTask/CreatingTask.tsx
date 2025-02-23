@@ -9,13 +9,15 @@ import {
   SELECT_VAR_DOMAIN_OPTIONS,
   SELECT_VARS_COUNT_OPTIONS,
 } from "./consts/consts";
-import { createArrayByLength } from "./helpers/helpers";
+import { createArrayByLength, useValidateData } from "./helpers/helpers";
 import {
   selectConstraintsCoeffs,
+  selectConstraintsCoeffsError,
   selectConstraintsCount,
   selectConstraintsRhs,
   selectConstraintsSense,
   selectObjectiveCoeffs,
+  selectObjectiveCoeffsError,
   selectObjectiveSense,
   selectVarsCount,
   selectVarsDomain,
@@ -38,6 +40,8 @@ export const CreatingTask = () => {
   const constraintsCoeffs = useAppSelector(selectConstraintsCoeffs);
   const constraintsSense = useAppSelector(selectConstraintsSense);
   const constraintsRhs = useAppSelector(selectConstraintsRhs);
+  const objectiveCoeffsError = useAppSelector(selectObjectiveCoeffsError);
+  const constraintsCoeffsError = useAppSelector(selectConstraintsCoeffsError);
   const {
     setVarsCount,
     addConstraint,
@@ -49,6 +53,7 @@ export const CreatingTask = () => {
     setConstraintsSense,
     setConstraintsRhs,
   } = creatingTaskActions;
+  const { validate } = useValidateData();
 
   const varsArray = useMemo(() => createArrayByLength(varsCount), [varsCount]);
   const constraintsArray = useMemo(
@@ -89,6 +94,11 @@ export const CreatingTask = () => {
       </Flex>
       <Flex gap={2} direction="column">
         <Text variant="header-1">Линейная функция</Text>
+        {objectiveCoeffsError && (
+          <Text variant="body-1" color="danger">
+            {objectiveCoeffsError}
+          </Text>
+        )}
         <Flex gap={3}>
           <Flex gap={2}>
             {varsArray.map((varIndex) => (
@@ -130,6 +140,11 @@ export const CreatingTask = () => {
       </Flex>
       <Flex gap={2} direction="column">
         <Text variant="header-1">Линейные ограничения</Text>
+        {constraintsCoeffsError && (
+          <Text variant="body-1" color="danger">
+            {constraintsCoeffsError}
+          </Text>
+        )}
         <Flex gap={2} direction="column">
           {constraintsArray.map((constraintIndex) => (
             <Flex key={`constraint_${constraintIndex}`} gap={4}>
@@ -204,6 +219,15 @@ export const CreatingTask = () => {
           </Button>
         </Flex>
       </Flex>
+      <Button
+        view="action"
+        onClick={validate}
+        className={"sendButton"}
+        size="l"
+        disabled={!!constraintsCoeffsError || !!objectiveCoeffsError}
+      >
+        Решить
+      </Button>
     </Flex>
   );
 };

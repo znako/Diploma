@@ -7,7 +7,7 @@ import {
   VariablesDomainEnum,
 } from "../types/types";
 
-export interface CounterState {
+export interface CreatingTaskState {
   varsCount: number;
   constraintsCount: number;
   varsDomain: VariablesDomainEnum[];
@@ -16,9 +16,13 @@ export interface CounterState {
   constraintsCoeffs: Array<null | string>[];
   constraintsSense: ConstraintSenseEnum[];
   constraintsRhs: Array<null | string>;
+
+  // Ошибки
+  objectiveCoeffsError: string | null;
+  constraintsCoeffsError: string | null;
 }
 
-const initialState: CounterState = {
+const initialState: CreatingTaskState = {
   varsCount: DEFAULT_VARS_COUNT,
   constraintsCount: DEFAULT_VARS_COUNT,
   varsDomain: [
@@ -36,6 +40,10 @@ const initialState: CounterState = {
     ConstraintSenseEnum.LESS_OR_EQUAL,
   ],
   constraintsRhs: [null, null],
+
+  // Ошибки
+  objectiveCoeffsError: null,
+  constraintsCoeffsError: null,
 };
 
 export const creatingTaskSlice = createSlice({
@@ -62,6 +70,8 @@ export const creatingTaskSlice = createSlice({
       }
 
       state.varsCount = action.payload;
+      state.constraintsCoeffsError = null;
+      state.objectiveCoeffsError = null;
     },
     addConstraint: (state) => {
       state.constraintsCoeffs.push(Array(state.varsCount).fill(null));
@@ -74,6 +84,7 @@ export const creatingTaskSlice = createSlice({
       state.constraintsSense.splice(action.payload, 1);
       state.constraintsRhs.splice(action.payload, 1);
       state.constraintsCount = state.constraintsCount - 1;
+      state.constraintsCoeffsError = null;
     },
     setVarsDomain: (
       state,
@@ -89,6 +100,7 @@ export const creatingTaskSlice = createSlice({
         payload: { coeff, index },
       } = action;
       state.objectiveCoeffs[index] = coeff;
+      state.objectiveCoeffsError = null;
     },
     setObjectiveSense: (state, action: PayloadAction<ObjectiveSenseEnum>) => {
       state.objectiveSense = action.payload;
@@ -105,6 +117,7 @@ export const creatingTaskSlice = createSlice({
         payload: { coeff, constraintIndex, varIndex },
       } = action;
       state.constraintsCoeffs[constraintIndex][varIndex] = coeff;
+      state.constraintsCoeffsError = null;
     },
     setConstraintsSense: (
       state,
@@ -123,6 +136,15 @@ export const creatingTaskSlice = createSlice({
         payload: { rhs, index },
       } = action;
       state.constraintsRhs[index] = rhs;
+      state.constraintsCoeffsError = null;
+    },
+
+    // Ошибки
+    setObjectiveCoeffsError: (state, action: PayloadAction<string>) => {
+      state.objectiveCoeffsError = action.payload;
+    },
+    setConstraintsCoeffsError: (state, action: PayloadAction<string>) => {
+      state.constraintsCoeffsError = action.payload;
     },
   },
 });

@@ -1,1 +1,0 @@
-export { DataEntry } from "./DataEntry";

@@ -1,13 +1,13 @@
+import { Container } from "@gravity-ui/uikit";
 import "@gravity-ui/uikit/styles/fonts.css";
 import "@gravity-ui/uikit/styles/styles.css";
-import { Container } from "@gravity-ui/uikit";
-import { Header, DataEntry } from "./components";
+import { CreatingTask, Header } from "./widgets";
 
 function App() {
   return (
     <Container gutters="10">
       <Header />
-      <DataEntry />
+      <CreatingTask />
       {/* <TranslatorContainer /> */}
     </Container>
   );

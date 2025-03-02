@@ -1,3 +1,7 @@
+.CreatingTask {
+  flex-basis: 50%;
+}
+
 .input {
   width: 50px;
   & .g-text-input__control_type_input {

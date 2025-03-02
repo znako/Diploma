@@ -1,0 +1,11 @@
+.TaskSolution {
+  flex-basis: 50%;
+}
+
+.emptyMessage {
+  text-align: center;
+}
+
+.spinner {
+  align-self: center;
+}

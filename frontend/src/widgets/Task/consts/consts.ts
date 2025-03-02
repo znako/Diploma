@@ -52,3 +52,5 @@ export const MAP_VAR_NUMBER_TO_NAME: Record<string, VariablesEnum> = {
   2: VariablesEnum.Z,
   3: VariablesEnum.V,
 };
+
+export const SHARED_SOLVE_MILP_FIXED_CACHE_KEY = "shared-solve-milp";

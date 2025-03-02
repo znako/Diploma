@@ -1,5 +1,14 @@
 import json
+import os
+import traceback
+
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 from pyomo.environ import *
+from pyomo.opt import SolverStatus, TerminationCondition
+
+app = Flask(__name__)
+CORS(app)
 
 def load_model_from_file(file_path):
     with open(file_path, 'r') as f:
@@ -11,7 +20,16 @@ def create_model(data):
     # Создание переменных
     model.variables = Var(range(len(data['variables'])), domain=NonNegativeReals)  # Инициализация на основе первого домена
     for i, var in enumerate(data['variables']):
-        domain = NonNegativeReals if var['domain'] == 'NonNegativeReals' else NonNegativeIntegers
+        if var['domain'] == 'NonNegativeReals':
+            domain = NonNegativeReals
+        elif var['domain'] == 'NonNegativeIntegers':
+            domain = NonNegativeIntegers
+        elif var['domain'] == 'Integers':
+            domain = Integers    
+        elif var['domain'] == 'Reals':
+            domain = Reals    
+        elif var['domain'] == 'Binary':
+            domain = Binary    
         model.variables[i].domain = domain  # Присвоение домена переменной
 
     # Задание целевой функции
@@ -35,10 +53,72 @@ def create_model(data):
     return model
 
 def solve_model(model):
-    result = SolverFactory('glpk').solve(model)
-    model.display()
+    solver = SolverFactory('glpk')
+    result = solver.solve(model)
+
+    if result.solver.status == SolverStatus.ok:
+        # status = str(result.solver.status)
+        termination_condition = str(result.solver.termination_condition)
+        if result.solver.termination_condition == TerminationCondition.optimal:
+            return {
+                # 'status': status,
+                'termination_condition': termination_condition,
+                'message': "Найдено оптимальное решение задачи.",
+                'objective': model.obj(),
+                'variable_values': {i: model.variables[i].value for i in model.variables}
+            }
+        elif result.solver.termination_condition == TerminationCondition.infeasible:
+            return {
+                # 'status': status,
+                'termination_condition': termination_condition,
+                'message': "Задача не имеет допустимых решений, удовлетворяющих всем ограничениям.",
+            }
+        elif result.solver.termination_condition == TerminationCondition.unbounded:
+            return {
+                # 'status': status,
+                'termination_condition': termination_condition,
+                'message': "Целевая функция может быть улучшена безгранично.",
+            }
+        else:
+            try:
+                return {
+                    # 'status': status,
+                    'termination_condition': termination_condition,
+                    'message': str(result.solver.termination_condition),
+                    'objective': model.obj(),
+                    'variable_values': {i: model.variables[i].value for i in model.variables}
+                }
+            except:
+                return {
+                    # 'status': status,
+                    'termination_condition': termination_condition,
+                    'message': str(result.solver.termination_condition),
+                }
+    else:
+        raise Exception('Что-то пошло не так попробуйте позже или введите другую задачу')
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Логируем полные трассировки исключений для отладки
+    print("An error occurred:", traceback.format_exc())
+
+    # Возвращаем ответ с корректными заголовками CORS
+    response = jsonify({'error': str(e)})
+    response.status_code = 500
+    return response
+
+@app.route('/solve_milp', methods=['POST'])
+def solve_milp_route():
+    data = request.json
+    try:
+        model = create_model(data)
+        solution = solve_model(model)
+        response = jsonify(solution)
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
+    except Exception as e:
+        return handle_exception(e)
+
 
 if __name__ == '__main__':
-    data = load_model_from_file('model_input.json')
-    model = create_model(data)
-    solve_model(model)
+    app.run(debug=True)

@@ -1,7 +1,12 @@
 import { useAppDispatch, useAppSelector } from "@/shared/hooks/hooks";
 import { isNumeric } from "validator";
+import { MAP_VAR_NUMBER_TO_NAME } from "../consts/consts";
 import { selectCreatingTaskData } from "../selectors/selectors";
-import { creatingTaskActions } from "../slice/taskCreatingSlice";
+import {
+  creatingTaskActions,
+  CreatingTaskState,
+} from "../slice/taskCreatingSlice";
+import { MilpDTO } from "../types/types";
 
 export const createArrayByLength = (length: number) =>
   Array(length)
@@ -19,6 +24,7 @@ export const useValidateData = () => {
       dispatch(
         setObjectiveCoeffsError("Введите корректные коэффициенты функции")
       );
+      return false;
     }
     if (
       !data.constraintsCoeffs.every((constraint) =>
@@ -31,8 +37,30 @@ export const useValidateData = () => {
           "Введите корректные коэффициенты функций ограничений"
         )
       );
+      return false;
     }
+    return true;
   };
 
   return { validate };
+};
+
+export const convertCreatingTaskDataToMilpDTO = (
+  data: CreatingTaskState
+): MilpDTO => {
+  return {
+    objective: {
+      coefficients: data.objectiveCoeffs.map(Number),
+      sense: data.objectiveSense,
+    },
+    variables: createArrayByLength(data.varsCount).map((i) => ({
+      name: MAP_VAR_NUMBER_TO_NAME[i],
+      domain: data.varsDomain[i],
+    })),
+    constraints: createArrayByLength(data.constraintsCount).map((i) => ({
+      coefficients: data.constraintsCoeffs[i].map(Number),
+      rhs: Number(data.constraintsRhs[i]),
+      sense: data.constraintsSense[i],
+    })),
+  };
 };

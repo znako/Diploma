@@ -1,8 +1,3 @@
-export type Variables = {
-  name: VariablesEnum;
-  domain: VariablesDomainEnum;
-}[];
-
 export enum VariablesEnum {
   X = "x",
   Y = "y",
@@ -34,7 +29,7 @@ export type MilpDTO = {
     coefficients: number[];
     sense: ObjectiveSenseEnum;
   };
-  variables: Variables;
+  variable_domains: VariablesDomainEnum[];
   constraints: {
     coefficients: number[];
     rhs: number;

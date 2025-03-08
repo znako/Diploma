@@ -18,17 +18,17 @@ def create_model(data):
     model = ConcreteModel()
 
     # Создание переменных
-    model.variables = Var(range(len(data['variables'])), domain=NonNegativeReals)  # Инициализация на основе первого домена
-    for i, var in enumerate(data['variables']):
-        if var['domain'] == 'NonNegativeReals':
+    model.variables = Var(range(len(data['variable_domains'])), domain=NonNegativeReals)  # Инициализация на основе первого домена
+    for i, var in enumerate(data['variable_domains']):
+        if var == 'NonNegativeReals':
             domain = NonNegativeReals
-        elif var['domain'] == 'NonNegativeIntegers':
+        elif var == 'NonNegativeIntegers':
             domain = NonNegativeIntegers
-        elif var['domain'] == 'Integers':
+        elif var == 'Integers':
             domain = Integers    
-        elif var['domain'] == 'Reals':
+        elif var == 'Reals':
             domain = Reals    
-        elif var['domain'] == 'Binary':
+        elif var == 'Binary':
             domain = Binary    
         model.variables[i].domain = domain  # Присвоение домена переменной
 
@@ -57,11 +57,9 @@ def solve_model(model):
     result = solver.solve(model)
 
     if result.solver.status == SolverStatus.ok:
-        # status = str(result.solver.status)
         termination_condition = str(result.solver.termination_condition)
         if result.solver.termination_condition == TerminationCondition.optimal:
             return {
-                # 'status': status,
                 'termination_condition': termination_condition,
                 'message': "Найдено оптимальное решение задачи.",
                 'objective': model.obj(),
@@ -69,20 +67,17 @@ def solve_model(model):
             }
         elif result.solver.termination_condition == TerminationCondition.infeasible:
             return {
-                # 'status': status,
                 'termination_condition': termination_condition,
                 'message': "Задача не имеет допустимых решений, удовлетворяющих всем ограничениям.",
             }
         elif result.solver.termination_condition == TerminationCondition.unbounded:
             return {
-                # 'status': status,
                 'termination_condition': termination_condition,
                 'message': "Целевая функция может быть улучшена безгранично.",
             }
         else:
             try:
                 return {
-                    # 'status': status,
                     'termination_condition': termination_condition,
                     'message': str(result.solver.termination_condition),
                     'objective': model.obj(),

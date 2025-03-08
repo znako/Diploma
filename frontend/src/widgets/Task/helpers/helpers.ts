@@ -1,6 +1,5 @@
 import { useAppDispatch, useAppSelector } from "@/shared/hooks/hooks";
 import { isNumeric } from "validator";
-import { MAP_VAR_NUMBER_TO_NAME } from "../consts/consts";
 import { selectCreatingTaskData } from "../selectors/selectors";
 import {
   creatingTaskActions,
@@ -53,10 +52,9 @@ export const convertCreatingTaskDataToMilpDTO = (
       coefficients: data.objectiveCoeffs.map(Number),
       sense: data.objectiveSense,
     },
-    variables: createArrayByLength(data.varsCount).map((i) => ({
-      name: MAP_VAR_NUMBER_TO_NAME[i],
-      domain: data.varsDomain[i],
-    })),
+    variable_domains: createArrayByLength(data.varsCount).map(
+      (i) => data.varsDomain[i]
+    ),
     constraints: createArrayByLength(data.constraintsCount).map((i) => ({
       coefficients: data.constraintsCoeffs[i].map(Number),
       rhs: Number(data.constraintsRhs[i]),

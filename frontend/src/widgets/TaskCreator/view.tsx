@@ -1,46 +1,46 @@
 import { Button, Flex, Select, Text, TextInput } from "@gravity-ui/uikit";
 import { useMemo } from "react";
 
-import { useAppDispatch, useAppSelector } from "@/shared/hooks/hooks";
-import { useSolveMilpMutation } from "../../api/api";
+import { useSolveMilpMutation } from "@/api";
+import { Title } from "@/shared/components/Title";
+import { useAppDispatch, useAppSelector } from "@/shared/hooks";
+import { ExcelUploader } from "../ExcelUploader";
 import {
   MAP_VAR_NUMBER_TO_NAME,
   SELECT_CONSTRAINT_SENSE_OPTIONS,
   SELECT_OBJECTIVE_SENSE_OPTIONS,
   SELECT_VAR_DOMAIN_OPTIONS,
   SELECT_VARS_COUNT_OPTIONS,
-  SHARED_SOLVE_MILP_FIXED_CACHE_KEY,
-} from "../../consts/consts";
+} from "./consts";
 import {
   convertCreatingTaskDataToMilpDTO,
   createArrayByLength,
   useValidateData,
-} from "../../helpers/helpers";
+} from "./helpers";
 import {
   selectConstraintsCoeffs,
   selectConstraintsCoeffsError,
   selectConstraintsCount,
   selectConstraintsRhs,
   selectConstraintsSense,
-  selectCreatingTaskData,
   selectObjectiveCoeffs,
   selectObjectiveCoeffsError,
   selectObjectiveSense,
+  selectTaskCreatorData,
   selectVarsCount,
   selectVarsDomain,
-} from "../../selectors/selectors";
-import { creatingTaskActions } from "../../slice/taskCreatingSlice";
+} from "./selectors";
+import { taskCreatorActions } from "./slice";
+import styles from "./styles.module.css";
 import {
   ConstraintSenseEnum,
   ObjectiveSenseEnum,
   VariablesDomainEnum,
-} from "../../types/types";
-import { Title } from "../Title/Title";
-import styles from "./styles.module.css";
+} from "./types";
 
-export const CreatingTask = () => {
+export const TaskCreator = () => {
   const dispatch = useAppDispatch();
-  const creatingTaskData = useAppSelector(selectCreatingTaskData);
+  const creatingTaskData = useAppSelector(selectTaskCreatorData);
   const varsCount = useAppSelector(selectVarsCount);
   const constraintsCount = useAppSelector(selectConstraintsCount);
   const varsDomain = useAppSelector(selectVarsDomain);
@@ -61,10 +61,8 @@ export const CreatingTask = () => {
     setConstraintsCoeffs,
     setConstraintsSense,
     setConstraintsRhs,
-  } = creatingTaskActions;
-  const [solveMilp] = useSolveMilpMutation({
-    fixedCacheKey: SHARED_SOLVE_MILP_FIXED_CACHE_KEY,
-  });
+  } = taskCreatorActions;
+  const [solveMilp] = useSolveMilpMutation();
   const { validate } = useValidateData();
 
   const varsArray = useMemo(() => createArrayByLength(varsCount), [varsCount]);
@@ -247,15 +245,18 @@ export const CreatingTask = () => {
             </Button>
           </Flex>
         </Flex>
-        <Button
-          view="action"
-          onClick={onSolveMilp}
-          className={styles.sendButton}
-          size="l"
-          disabled={!!constraintsCoeffsError || !!objectiveCoeffsError}
-        >
-          Решить
-        </Button>
+        <Flex gap={2} alignItems={"center"}>
+          <Button
+            view="action"
+            onClick={onSolveMilp}
+            className={styles.sendButton}
+            size="l"
+            disabled={!!constraintsCoeffsError || !!objectiveCoeffsError}
+          >
+            Решить
+          </Button>
+          <ExcelUploader />
+        </Flex>
       </Flex>
     </Flex>
   );

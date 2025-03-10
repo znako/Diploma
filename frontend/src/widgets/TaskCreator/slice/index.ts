@@ -1,13 +1,13 @@
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createSlice } from "@reduxjs/toolkit";
-import { DEFAULT_VARS_COUNT } from "../consts/consts";
+import { DEFAULT_VARS_COUNT } from "../consts";
 import {
   ConstraintSenseEnum,
   ObjectiveSenseEnum,
   VariablesDomainEnum,
-} from "../types/types";
+} from "../types";
 
-export interface CreatingTaskState {
+export interface TaskCreatorState {
   varsCount: number;
   constraintsCount: number;
   varsDomain: VariablesDomainEnum[];
@@ -22,7 +22,7 @@ export interface CreatingTaskState {
   constraintsCoeffsError: string | null;
 }
 
-const initialState: CreatingTaskState = {
+const initialState: TaskCreatorState = {
   varsCount: DEFAULT_VARS_COUNT,
   constraintsCount: DEFAULT_VARS_COUNT,
   varsDomain: [
@@ -46,8 +46,8 @@ const initialState: CreatingTaskState = {
   constraintsCoeffsError: null,
 };
 
-export const creatingTaskSlice = createSlice({
-  name: "creatingTask",
+export const taskCreatorSlice = createSlice({
+  name: "taskCreator",
   initialState,
   reducers: {
     setVarsCount: (state, action: PayloadAction<number>) => {
@@ -146,8 +146,10 @@ export const creatingTaskSlice = createSlice({
     setConstraintsCoeffsError: (state, action: PayloadAction<string>) => {
       state.constraintsCoeffsError = action.payload;
     },
+
+    setInitialState: () => initialState,
   },
 });
 
-export const { actions: creatingTaskActions, reducer: creatingTaskReducer } =
-  creatingTaskSlice;
+export const { actions: taskCreatorActions, reducer: taskCreatorReducer } =
+  taskCreatorSlice;

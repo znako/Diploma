@@ -3,7 +3,7 @@ import {
   ObjectiveSenseEnum,
   VariablesDomainEnum,
   VariablesEnum,
-} from "../types/types";
+} from "../types";
 
 export const SELECT_VARS_COUNT_OPTIONS = [
   { value: "2", content: "2" },
@@ -52,5 +52,3 @@ export const MAP_VAR_NUMBER_TO_NAME: Record<string, VariablesEnum> = {
   2: VariablesEnum.Z,
   3: VariablesEnum.V,
 };
-
-export const SHARED_SOLVE_MILP_FIXED_CACHE_KEY = "shared-solve-milp";

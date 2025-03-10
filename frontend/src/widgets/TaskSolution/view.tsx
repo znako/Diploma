@@ -1,17 +1,13 @@
+import { Title } from "@/shared/components/Title";
+import { useAppSelector } from "@/shared/hooks";
 import { Flex, Spin, Text } from "@gravity-ui/uikit";
-import { useSolveMilpMutation } from "../../api/api";
-import {
-  MAP_VAR_NUMBER_TO_NAME,
-  SHARED_SOLVE_MILP_FIXED_CACHE_KEY,
-} from "../../consts/consts";
-import { Title } from "../Title/Title";
+import { MAP_VAR_NUMBER_TO_NAME } from "../TaskCreator/consts";
+import { selectSolutionData, selectSolutionIsLoading } from "./selectors";
 import styles from "./styles.module.css";
 
 export const TaskSolution = () => {
-  const [, { data, isLoading }] = useSolveMilpMutation({
-    fixedCacheKey: SHARED_SOLVE_MILP_FIXED_CACHE_KEY,
-  });
-  console.log(data, isLoading);
+  const data = useAppSelector(selectSolutionData);
+  const isLoading = useAppSelector(selectSolutionIsLoading);
 
   const renderContent = () => {
     if (isLoading) {

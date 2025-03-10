@@ -1,11 +1,8 @@
-import { useAppDispatch, useAppSelector } from "@/shared/hooks/hooks";
+import { useAppDispatch, useAppSelector } from "@/shared/hooks";
 import { isNumeric } from "validator";
-import { selectCreatingTaskData } from "../selectors/selectors";
-import {
-  creatingTaskActions,
-  CreatingTaskState,
-} from "../slice/taskCreatingSlice";
-import { MilpDTO } from "../types/types";
+import { selectTaskCreatorData } from "../selectors";
+import { taskCreatorActions, TaskCreatorState } from "../slice";
+import { MilpDTO } from "../types";
 
 export const createArrayByLength = (length: number) =>
   Array(length)
@@ -13,10 +10,10 @@ export const createArrayByLength = (length: number) =>
     .map((_, i) => i);
 
 export const useValidateData = () => {
-  const data = useAppSelector(selectCreatingTaskData);
+  const data = useAppSelector(selectTaskCreatorData);
   const dispatch = useAppDispatch();
   const { setObjectiveCoeffsError, setConstraintsCoeffsError } =
-    creatingTaskActions;
+    taskCreatorActions;
 
   const validate = () => {
     if (!data.objectiveCoeffs.every((coeff) => coeff && isNumeric(coeff))) {
@@ -45,7 +42,7 @@ export const useValidateData = () => {
 };
 
 export const convertCreatingTaskDataToMilpDTO = (
-  data: CreatingTaskState
+  data: TaskCreatorState
 ): MilpDTO => {
   return {
     objective: {

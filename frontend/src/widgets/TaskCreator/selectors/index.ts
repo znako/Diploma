@@ -1,26 +1,26 @@
 import { RootState } from "configs/store/store";
 
-export const selectCreatingTaskData = (state: RootState) => state.creatingTask;
+export const selectTaskCreatorData = (state: RootState) => state.taskCreator;
 
 export const selectVarsCount = (state: RootState) =>
-  state.creatingTask.varsCount;
+  state.taskCreator.varsCount;
 export const selectConstraintsCount = (state: RootState) =>
-  state.creatingTask.constraintsCount;
+  state.taskCreator.constraintsCount;
 export const selectVarsDomain = (state: RootState) =>
-  state.creatingTask.varsDomain;
+  state.taskCreator.varsDomain;
 export const selectObjectiveCoeffs = (state: RootState) =>
-  state.creatingTask.objectiveCoeffs;
+  state.taskCreator.objectiveCoeffs;
 export const selectObjectiveSense = (state: RootState) =>
-  state.creatingTask.objectiveSense;
+  state.taskCreator.objectiveSense;
 export const selectConstraintsCoeffs = (state: RootState) =>
-  state.creatingTask.constraintsCoeffs;
+  state.taskCreator.constraintsCoeffs;
 export const selectConstraintsSense = (state: RootState) =>
-  state.creatingTask.constraintsSense;
+  state.taskCreator.constraintsSense;
 export const selectConstraintsRhs = (state: RootState) =>
-  state.creatingTask.constraintsRhs;
+  state.taskCreator.constraintsRhs;
 
 // Ошибки
 export const selectObjectiveCoeffsError = (state: RootState) =>
-  state.creatingTask.objectiveCoeffsError;
+  state.taskCreator.objectiveCoeffsError;
 export const selectConstraintsCoeffsError = (state: RootState) =>
-  state.creatingTask.constraintsCoeffsError;
+  state.taskCreator.constraintsCoeffsError;

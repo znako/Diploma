@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import traceback
 
@@ -109,7 +110,6 @@ def handle_exception(e):
 def solve_milp_route():
     data = request.json
     try:
-        raise Exception('Что-то пошло не так попробуйте позже или введите другую задачу')
         model = create_model(data)
         solution = solve_model(model)
         response = jsonify(solution)
@@ -122,30 +122,67 @@ def solve_milp_route():
 
 # Валидация данных
 def validate_data(df):
+    print(df)
     # Определим индексы или названия строк, в которые помещены одноэлементные значения
     index_variable_count = 0
     index_objective_sense = 3
     index_constraint_count = 4
 
-    num_variables = int(df.iloc[0, index_variable_count])
+    # Валидация количества переменных
+    try:
+        num_variables = int(df.iloc[0, index_variable_count])
+    except:
+        raise ValueError("Количество переменных должно быть целым числом")
+
+    # Валидация количества ограничений
+    try:
+        num_constraints = int(df.iloc[0, index_constraint_count])
+    except:
+        raise ValueError("Количество ограничений должно быть целым числом")
     objective_sense = df.iloc[0, index_objective_sense]
-    num_constraints = int(df.iloc[0, index_constraint_count])
 
     # Проверяем наличие столбцов
     expected_columns = {'Количество переменных', 'Указание на целочисленность', 'Коэффициенты функции', 'Вид оптимизации', 'Количество ограничений'}
+    for i in range(num_constraints):
+        expected_columns.add(f'Коэффициенты ограничения {i+1}')
+        expected_columns.add(f'Правая часть ограничения {i+1}')
+        expected_columns.add(f'Знак ограничения {i+1}')
     if not expected_columns.issubset(df.columns):
         raise ValueError('Неверный формат данных: пропущен обязательный столбец данных')
 
     # Валидация указания на целочисленность и коэффициентов
-    if len(df.iloc[:, 1]) != num_variables:
+    if len(df.iloc[:, 1].dropna()) != num_variables:
         raise ValueError("Количество элементов в столбце указания на целочисленность не совпадает с количеством переменных")
-    if len(df.iloc[:, 2]) != num_variables:
+    for x in df.iloc[:, 1]:
+        if x != 'NonNegativeReals' and x != 'NonNegativeIntegers' and x != 'Integers' and x != 'Reals' and x != 'Binary':
+            raise ValueError(f"Неверный формат значений столбца указания на целочисленность")
+    if len(df.iloc[:, 2].dropna()) != num_variables:
         raise ValueError("Количество элементов в столбце коэффициентов функции не совпадает с количеством переменных")
+    for x in df.iloc[:, 2]:
+        try:
+            float(x)
+        except:
+            raise ValueError(f"Коэффициентами функции могут быть только числа")
 
-    # Валидация коэффициентов ограничений
+    # Валидация вида оптимизации
+    if objective_sense != 'maximize' and objective_sense != 'minimize':
+        raise ValueError("Неверный вид оптимизации")
+
+    # Валидация ограничений
     for i in range(num_constraints):
-        if len(df.iloc[:, 5 + 3*i]) != num_variables:
+        if len(df.iloc[:, 5 + 3*i].dropna()) != num_variables:
             raise ValueError(f"Количество коэффициентов в {i+1}-м ограничении не совпадает с количеством переменных")
+        for x in df.iloc[:, 5 + 3*i]:
+            try:
+                float(x)
+            except:
+                raise ValueError(f"Коэффициентами ограничений могут быть только числа")
+        try:
+            float(df.iloc[0, 6 + 3*i])
+        except:
+            raise ValueError(f"Неверно задана правая часть в {i+1}-м ограничении")
+        if df.iloc[0, 7 + 3*i] != '==' and df.iloc[0, 7 + 3*i] != '<=' and df.iloc[0, 7 + 3*i] != '>=':
+            raise ValueError(f"Неверно задан знак ограничения в {i+1}-м ограничении")
 
 # Преобразование данных в JSON
 def convert_to_json(df):
@@ -219,7 +256,7 @@ def upload_excel():
         validate_data(df)
     except Exception as e:
         # print(e)
-        return jsonify({'error': e}), 400
+        return jsonify({'error': str(e)}), 400
 
     # Конвертация в JSON структуру
     data = None

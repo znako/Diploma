@@ -20,7 +20,9 @@ export const api = createApi({
           const { data } = await queryFulfilled;
           dispatch(taskSolutionActions.setData(data));
           dispatch(taskSolutionActions.setLoading(false));
-        } catch {}
+        } catch {
+          dispatch(taskSolutionActions.setInitialState());
+        }
       },
     }),
     solveMilpExcel: builder.mutation<Solution, FormData>({
@@ -36,7 +38,9 @@ export const api = createApi({
           const { data } = await queryFulfilled;
           dispatch(taskSolutionActions.setData(data));
           dispatch(taskSolutionActions.setLoading(false));
-        } catch {}
+        } catch {
+          dispatch(taskSolutionActions.setInitialState());
+        }
       },
     }),
   }),

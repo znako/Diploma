@@ -1,7 +1,15 @@
-import { Button, Flex, Select, Text, TextInput } from "@gravity-ui/uikit";
-import { useMemo } from "react";
+import {
+  Button,
+  Flex,
+  Select,
+  Text,
+  TextInput,
+  useToaster,
+} from "@gravity-ui/uikit";
+import { useEffect, useMemo } from "react";
 
 import { useSolveMilpMutation } from "@/api";
+import { ErrorResponse } from "@/api/types";
 import { Title } from "@/shared/components/Title";
 import { useAppDispatch, useAppSelector } from "@/shared/hooks";
 import { ExcelUploader } from "../ExcelUploader";
@@ -40,6 +48,7 @@ import {
 
 export const TaskCreator = () => {
   const dispatch = useAppDispatch();
+  const { add } = useToaster();
   const creatingTaskData = useAppSelector(selectTaskCreatorData);
   const varsCount = useAppSelector(selectVarsCount);
   const constraintsCount = useAppSelector(selectConstraintsCount);
@@ -62,8 +71,18 @@ export const TaskCreator = () => {
     setConstraintsSense,
     setConstraintsRhs,
   } = taskCreatorActions;
-  const [solveMilp] = useSolveMilpMutation();
+  const [solveMilp, { error }] = useSolveMilpMutation();
   const { validate } = useValidateData();
+
+  useEffect(() => {
+    if (error) {
+      add({
+        name: "SolveMilpError",
+        title: (error as ErrorResponse).data.error,
+        theme: "danger",
+      });
+    }
+  }, [error, add]);
 
   const varsArray = useMemo(() => createArrayByLength(varsCount), [varsCount]);
   const constraintsArray = useMemo(

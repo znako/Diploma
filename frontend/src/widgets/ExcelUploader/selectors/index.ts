@@ -1,4 +1,4 @@
-import { RootState } from "@/configs/store/store";
+import { RootState } from "@/configs/store";
 
 export const selectExcelUploaderValue = (state: RootState) =>
   state.excelUploader.value;

@@ -1,16 +1,26 @@
 import json
 import math
 import os
+import time
 import traceback
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from io import BytesIO
 
 import pandas as pd
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
 
 app = Flask(__name__)
 CORS(app)
+
+# Глобальное хранилище задач, формат:
+# tasks = { task_id: { "status": "processing"/"done"/"error",
+# "log": [сообщения о ходе выполнения],
+# "result": результат или None } }
+tasks = {}
 
 def load_model_from_file(file_path):
     with open(file_path, 'r') as f:
@@ -31,7 +41,7 @@ def create_model(data):
         elif var == 'Reals':
             domain = Reals    
         elif var == 'Binary':
-            domain = Binary    ## ДОБАВИТЬ ПРОВЕРКУ НА ДОЛБАЕБОВ
+            domain = Binary 
         model.variables[i].domain = domain  # Присвоение домена переменной
 
     # Задание целевой функции
@@ -40,7 +50,6 @@ def create_model(data):
         model.obj = Objective(expr=objective_expr, sense=maximize)
     else:
         model.obj = Objective(expr=objective_expr, sense=minimize)
-        ## ДОБАВИТЬ ПРОВЕРКУ НА ДОЛБАЕБОВ
 
     # Создание ограничений
     model.constraints = ConstraintList()
@@ -52,7 +61,6 @@ def create_model(data):
             model.constraints.add(expr >= constr['rhs'])
         elif constr['sense'] == '==':
             model.constraints.add(expr == constr['rhs'])
-        ## ДОБАВИТЬ ПРОВЕРКУ НА ДОЛБАЕБОВ
 
     return model
 
@@ -111,13 +119,15 @@ def solve_milp_route():
     data = request.json
     try:
         model = create_model(data)
-        solution = solve_model(model)
-        response = jsonify(solution)
-        response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        return response
     except Exception as e:
         return handle_exception(e)
 
+    task_id = str(uuid.uuid4())
+    # Запускаем фоновую задачу
+    executor = ThreadPoolExecutor(max_workers=1)
+    executor.submit(process_excel_task, task_id, model)
+    executor.shutdown(wait=False)  # не блокируем поток
+    return jsonify({'task_id': task_id}), 202
 
 
 # Валидация данных
@@ -227,6 +237,27 @@ def convert_to_json(df):
 
     return data_json
 
+# Фоновая функция для обработки Excel–запроса и решения задачи
+def process_excel_task(task_id, model):
+    tasks[task_id] = {"status": "processing", "log": [], "result": None}
+    try:
+        tasks[task_id]["log"].append("Начало решения задачи...")
+        # Используем ThreadPoolExecutor для решения с имитацией промежуточных сообщений.
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(solve_model, model)
+            while not future.done():
+                # Каждую секунду добавляем сообщение о ходе выполнения
+                tasks[task_id]["log"].append("Решение задачи в процессе...")
+                time.sleep(1)
+            solution = future.result()
+        tasks[task_id]["log"].append("Решение задачи завершено.")
+        tasks[task_id]["result"] = solution
+        tasks[task_id]["status"] = "done"
+    except Exception as e:
+        tasks[task_id]["log"].append(f"Ошибка: {str(e)}")
+        tasks[task_id]["status"] = "error"
+
+# Эндпоинт для загрузки Excel и запуска фоновой задачи
 @app.route('/solve_milp/excel', methods=['POST'])
 def upload_excel():
     # Проверка наличия файла в запросе
@@ -234,11 +265,6 @@ def upload_excel():
         return jsonify({'error': 'Вы не отправили файл'}), 400
 
     file = request.files['file']
-
-    # Проверка, что файл имеет нужное имя
-    # if file.filename == '':
-    #     return jsonify({'error': 'No selected file'}), 400
-
     if not file.filename.endswith('.xlsx'):
         return jsonify({'error': 'Файл не является Excel файлом. Загрузите файл с расширением .xlsx'}), 400
 
@@ -266,18 +292,46 @@ def upload_excel():
         # print(e)
         return handle_exception(e)
 
-    # Решение задачи
+    # Создание модели
     try:
         model = create_model(data)
-        solution = solve_model(model)
-        response = jsonify(solution)
-        response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        return response
     except Exception as e:
         # print(e)
         return handle_exception(e)
 
 
+    task_id = str(uuid.uuid4())
+    # Запускаем фоновую задачу
+    executor = ThreadPoolExecutor(max_workers=1)
+    executor.submit(process_excel_task, task_id, model)
+    executor.shutdown(wait=False)  # не блокируем поток
+    return jsonify({'task_id': task_id}), 202
+
+# Эндпоинт SSE для получения обновлений по задаче (task_progress)
+@app.route('/task_progress/<task_id>', methods=['GET'])
+def task_progress(task_id):
+    def event_stream():
+        last_index = 0
+        # Отправляем данные до тех пор, пока задача не завершена
+        while True:
+            if task_id not in tasks:
+                yield "data: error: Задача не найдена\n\n"
+                break
+            log = tasks[task_id]["log"]
+            while last_index < len(log):
+                yield "data: " + log[last_index] + "\n\n"
+                last_index += 1
+            if tasks[task_id]["status"] in ("done", "error"):
+                # Если задача завершена, отправляем итоговый результат (если он есть)
+                if tasks[task_id]["status"] == "done" and tasks[task_id]["result"] is not None:
+                    yield "data: " + json.dumps(tasks[task_id]["result"], ensure_ascii=False) + "\n\n"
+                if tasks[task_id]["status"] == "error":
+                    yield "data: " + "[error]" + "\n\n"
+                break
+            time.sleep(1)
+        yield "data: [end]\n\n"
+    return Response(event_stream(), mimetype="text/event-stream")
+
 if __name__ == '__main__':
     # upload_excel()
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)

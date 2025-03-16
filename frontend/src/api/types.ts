@@ -4,3 +4,6 @@ export type ErrorResponse = {
     error: string;
   };
 };
+
+export type SolveMilpResponse = { task_id: string };
+export type SolveMilpExcelResponse = { task_id: string };

@@ -1,13 +1,17 @@
+import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
 import { excelUploaderActions } from "@/widgets/ExcelUploader";
 import { MilpDTO, taskCreatorActions } from "@/widgets/TaskCreator";
-import { Solution, taskSolutionActions } from "@/widgets/TaskSolution";
+import { taskSolutionActions } from "@/widgets/TaskSolution";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { BACKEND_URL } from "./consts";
+import { SolveMilpExcelResponse, SolveMilpResponse } from "./types";
+import { openSSEConnection } from "./utils";
 
 export const api = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://127.0.0.1:5000/solve_milp" }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${BACKEND_URL}/solve_milp` }),
   endpoints: (builder) => ({
-    solveMilp: builder.mutation<Solution, MilpDTO>({
+    solveMilp: builder.mutation<SolveMilpResponse, MilpDTO>({
       query: (data) => ({
         url: "",
         method: "POST",
@@ -15,29 +19,38 @@ export const api = createApi({
       }),
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         dispatch(excelUploaderActions.setInitialState());
-        dispatch(taskSolutionActions.setLoading(true));
+        dispatch(taskSolutionActions.setIsLoading(true));
         try {
+          // Получаем ответ от бекенда – он должен вернуть { task_id: string }
           const { data } = await queryFulfilled;
-          dispatch(taskSolutionActions.setData(data));
-          dispatch(taskSolutionActions.setLoading(false));
+          const taskId = data.task_id;
+          // Сохраняем taskId в localStorage
+          localStorage.setItem(TASK_ID_LOCAL_STORAGE_KEY, taskId);
+
+          // Открываем SSE соединение для получения прогресса по задаче.
+          openSSEConnection(taskId, dispatch);
         } catch {
           dispatch(taskSolutionActions.setInitialState());
         }
       },
     }),
-    solveMilpExcel: builder.mutation<Solution, FormData>({
+    solveMilpExcel: builder.mutation<SolveMilpExcelResponse, FormData>({
       query: (data) => {
-        console.log(data);
+        console.log("Отправляем Excel данные:", data);
         return { url: "/excel", method: "POST", body: data };
       },
-      // При вызове данного эндпоинта tag 'SolveMilpData' инвалидируется, что приведёт к сбросу кэша
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         dispatch(taskCreatorActions.setInitialState());
-        dispatch(taskSolutionActions.setLoading(true));
+        dispatch(taskSolutionActions.setIsLoading(true));
         try {
+          // Получаем ответ от бекенда – он должен вернуть { task_id: string }
           const { data } = await queryFulfilled;
-          dispatch(taskSolutionActions.setData(data));
-          dispatch(taskSolutionActions.setLoading(false));
+          const taskId = data.task_id;
+          // Сохраняем taskId в localStorage
+          localStorage.setItem(TASK_ID_LOCAL_STORAGE_KEY, taskId);
+
+          // Открываем SSE соединение для получения прогресса по задаче.
+          openSSEConnection(taskId, dispatch);
         } catch {
           dispatch(taskSolutionActions.setInitialState());
         }

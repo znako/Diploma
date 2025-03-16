@@ -1,17 +1,42 @@
+import { openSSEConnection } from "@/api/utils";
 import { Title } from "@/shared/components/Title";
-import { useAppSelector } from "@/shared/hooks";
-import { Flex, Spin, Text } from "@gravity-ui/uikit";
+import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
+import { useAppDispatch, useAppSelector } from "@/shared/hooks";
+import { Button, Flex, Progress, Text } from "@gravity-ui/uikit";
+import cn from "classnames";
+import { useEffect, useState } from "react";
 import { MAP_VAR_NUMBER_TO_NAME } from "../TaskCreator/consts";
+import { OVERFLOW_VARS_NUMBER } from "./consts";
 import { selectSolutionData, selectSolutionIsLoading } from "./selectors";
+import { taskSolutionActions } from "./slice";
 import styles from "./styles.module.css";
 
 export const TaskSolution = () => {
+  const [showMore, setShowMore] = useState(false);
+  const dispatch = useAppDispatch();
   const data = useAppSelector(selectSolutionData);
   const isLoading = useAppSelector(selectSolutionIsLoading);
+  const { setIsLoading } = taskSolutionActions;
+
+  useEffect(() => {
+    const taskId = localStorage.getItem(TASK_ID_LOCAL_STORAGE_KEY);
+    if (taskId) {
+      dispatch(setIsLoading(true));
+      openSSEConnection(taskId, dispatch);
+    }
+  }, []);
 
   const renderContent = () => {
     if (isLoading) {
-      return <Spin className={styles.spinner} />;
+      return (
+        <Progress
+          className={styles.progress}
+          text="Задача решается..."
+          theme="info"
+          value={80}
+          loading={true}
+        />
+      );
     }
     if (!data) {
       return (
@@ -33,11 +58,42 @@ export const TaskSolution = () => {
         {data.variable_values && (
           <Flex direction={"column"} gap={2}>
             <Text variant="header-1">Значение переменных:</Text>
-            {Object.entries(data.variable_values).map(([index, value]) => (
-              <Text variant="header-1" key={`variable_values_${index}`}>
-                {MAP_VAR_NUMBER_TO_NAME[index]}: {value}
-              </Text>
-            ))}
+            <Flex
+              direction={"column"}
+              className={cn(styles.variablesContainer, {
+                [styles.hide]: !showMore,
+              })}
+            >
+              {Object.entries(data.variable_values).map(
+                ([index, value], _, varsArray) => (
+                  <Text variant="header-1" key={`variable_values_${index}`}>
+                    {varsArray.length >
+                    Object.entries(MAP_VAR_NUMBER_TO_NAME).length
+                      ? index
+                      : MAP_VAR_NUMBER_TO_NAME[index]}
+                    : {value}
+                  </Text>
+                )
+              )}
+              {Object.entries(data.variable_values).length >
+                OVERFLOW_VARS_NUMBER &&
+                !showMore && (
+                  <Button
+                    className={styles.toggleShowMoreButton}
+                    onClick={() => setShowMore(true)}
+                  >
+                    Показать все
+                  </Button>
+                )}
+              {showMore && (
+                <Button
+                  className={styles.toggleShowMoreButton}
+                  onClick={() => setShowMore(false)}
+                >
+                  Скрыть
+                </Button>
+              )}
+            </Flex>
           </Flex>
         )}
       </Flex>

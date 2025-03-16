@@ -27,7 +27,9 @@ export const ExcelUploader = () => {
     if (error) {
       add({
         name: "ExcelUploaderError",
-        title: (error as ErrorResponse).data.error,
+        title:
+          (error as ErrorResponse)?.data?.error ??
+          "Что-то пошло не так, попробуйте еще раз",
         theme: "danger",
       });
     }

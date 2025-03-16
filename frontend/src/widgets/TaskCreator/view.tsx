@@ -78,7 +78,9 @@ export const TaskCreator = () => {
     if (error) {
       add({
         name: "SolveMilpError",
-        title: (error as ErrorResponse).data.error,
+        title:
+          (error as ErrorResponse)?.data?.error ??
+          "Что-то пошло не так, попробуйте еще раз",
         theme: "danger",
       });
     }

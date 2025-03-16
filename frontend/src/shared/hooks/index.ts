@@ -1,4 +1,4 @@
-import { AppDispatch, RootState } from "configs/store/store";
+import { AppDispatch, RootState } from "@/configs/store";
 import { useDispatch, useSelector } from "react-redux";
 
 // Use throughout your app instead of plain `useDispatch` and `useSelector`

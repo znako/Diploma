@@ -19,7 +19,7 @@ export const taskSolutionSlice = createSlice({
     setData: (state, action: PayloadAction<Solution>) => {
       state.data = action.payload;
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
+    setIsLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
     setInitialState: () => initialState,

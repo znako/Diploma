@@ -1,6 +1,5 @@
 import {
   ThemeProvider,
-  Toaster,
   ToasterComponent,
   ToasterProvider,
 } from "@gravity-ui/uikit";
@@ -8,10 +7,9 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 
 import App from "./App";
-import { store } from "./configs/store/store";
+import { store } from "./configs/store";
 import "./index.css";
-
-const toaster = new Toaster();
+import { toaster } from "./shared/components/Toaster";
 
 createRoot(document.getElementById("root")!).render(
   <div className="g-root">

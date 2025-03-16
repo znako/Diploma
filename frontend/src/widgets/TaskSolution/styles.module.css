@@ -6,6 +6,21 @@
   text-align: center;
 }
 
-.spinner {
-  align-self: center;
+.progress {
+  width: 250px;
+}
+
+.variablesContainer {
+  position: relative;
+
+  &.hide {
+    height: 550px;
+    overflow: hidden;
+  }
+}
+
+.toggleShowMoreButton {
+  position: absolute;
+  right: 0;
+  bottom: 0;
 }

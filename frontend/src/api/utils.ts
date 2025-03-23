@@ -1,5 +1,6 @@
 import { AppDispatch } from "@/configs/store";
 import { toaster } from "@/shared/components/Toaster";
+import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
 import { Solution, taskSolutionActions } from "@/widgets/TaskSolution";
 import { BACKEND_URL } from "./consts";
 
@@ -37,6 +38,7 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
           title: "Что-то пошло не так попробуйте снова",
           theme: "danger",
         });
+        localStorage.removeItem(TASK_ID_LOCAL_STORAGE_KEY);
       } else {
         // Обновляем лог.
         console.log(message);
@@ -50,6 +52,7 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
       theme: "danger",
     });
     dispatch(taskSolutionActions.setIsLoading(false));
+    localStorage.removeItem(TASK_ID_LOCAL_STORAGE_KEY);
     currentSSEConnection.close();
   };
 };

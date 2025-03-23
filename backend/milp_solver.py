@@ -5,6 +5,7 @@ import time
 import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from io import BytesIO
 
 import pandas as pd
@@ -12,9 +13,31 @@ from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
+from sqlalchemy import JSON, Column, DateTime, Integer, String, create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 app = Flask(__name__)
 CORS(app)
+
+# Настройка подключения к PostgreSQL
+DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+# Определение модели для хранения задач в БД
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(String, unique=True, index=True, nullable=False)
+    conditions = Column(JSON, nullable=False)  # исходные условия задачи (JSON)
+    solution = Column(JSON)  # решение задачи (JSON), может быть пустым, если задача не решена
+    upload_time = Column(DateTime, default=datetime.now)  # время загрузки задачи
+    solve_time = Column(DateTime)  # время завершения решения задачи
+    
+# Создание таблицы, если она еще не создана
+Base.metadata.create_all(bind=engine)
 
 # Глобальное хранилище задач, формат:
 # tasks = { task_id: { "status": "processing"/"done"/"error",
@@ -125,7 +148,7 @@ def solve_milp_route():
     task_id = str(uuid.uuid4())
     # Запускаем фоновую задачу
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(process_excel_task, task_id, model)
+    executor.submit(process_excel_task, task_id, model, data)
     executor.shutdown(wait=False)  # не блокируем поток
     return jsonify({'task_id': task_id}), 202
 
@@ -238,10 +261,17 @@ def convert_to_json(df):
     return data_json
 
 # Фоновая функция для обработки Excel–запроса и решения задачи
-def process_excel_task(task_id, model):
+def process_excel_task(task_id, model, conditions_json):
     tasks[task_id] = {"status": "processing", "log": [], "result": None}
+    db = SessionLocal()
+    # Создаем запись в БД (upload_time установится автоматически)
+    task_record = Task(task_id=task_id, conditions=conditions_json)
+    db.add(task_record)
+    db.commit()
+
     try:
         tasks[task_id]["log"].append("Начало решения задачи...")
+        start_time = datetime.now(timezone.utc)
         # Используем ThreadPoolExecutor для решения с имитацией промежуточных сообщений.
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(solve_model, model)
@@ -250,12 +280,20 @@ def process_excel_task(task_id, model):
                 tasks[task_id]["log"].append("Решение задачи в процессе...")
                 time.sleep(1)
             solution = future.result()
+        finish_time = datetime.now(timezone.utc)
         tasks[task_id]["log"].append("Решение задачи завершено.")
         tasks[task_id]["result"] = solution
         tasks[task_id]["status"] = "done"
+
+        # Обновляем запись в БД – сохраняем решение и время завершения
+        task_record.solution = solution
+        task_record.solve_time = finish_time
+        db.commit()
     except Exception as e:
         tasks[task_id]["log"].append(f"Ошибка: {str(e)}")
         tasks[task_id]["status"] = "error"
+    finally:
+        db.close()
 
 # Эндпоинт для загрузки Excel и запуска фоновой задачи
 @app.route('/solve_milp/excel', methods=['POST'])
@@ -303,7 +341,7 @@ def upload_excel():
     task_id = str(uuid.uuid4())
     # Запускаем фоновую задачу
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(process_excel_task, task_id, model)
+    executor.submit(process_excel_task, task_id, model, data)
     executor.shutdown(wait=False)  # не блокируем поток
     return jsonify({'task_id': task_id}), 202
 

@@ -30,6 +30,7 @@ export const api = createApi({
           // Открываем SSE соединение для получения прогресса по задаче.
           openSSEConnection(taskId, dispatch);
         } catch {
+          localStorage.removeItem(TASK_ID_LOCAL_STORAGE_KEY);
           dispatch(taskSolutionActions.setInitialState());
         }
       },
@@ -52,6 +53,7 @@ export const api = createApi({
           // Открываем SSE соединение для получения прогресса по задаче.
           openSSEConnection(taskId, dispatch);
         } catch {
+          localStorage.removeItem(TASK_ID_LOCAL_STORAGE_KEY);
           dispatch(taskSolutionActions.setInitialState());
         }
       },

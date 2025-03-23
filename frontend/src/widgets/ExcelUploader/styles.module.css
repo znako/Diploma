@@ -1,0 +1,14 @@
+.modal {
+  padding: 20px;
+  width: 60%;
+  margin: 0 auto;
+}
+
+.card {
+  padding: 10px;
+  margin-bottom: 20px;
+
+  & li {
+    padding: 2px 0;
+  }
+}

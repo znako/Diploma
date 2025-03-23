@@ -1,9 +1,14 @@
-import { Text } from "@gravity-ui/uikit";
+import { Text, TEXT_VARIANTS } from "@gravity-ui/uikit";
 import styles from "./styles.module.css";
 
-export const Title = ({ title }: { title: string }) => {
+type TitleProps = {
+  title: string;
+  variant?: (typeof TEXT_VARIANTS)[number];
+};
+
+export const Title = ({ title, variant = "display-1" }: TitleProps) => {
   return (
-    <Text variant="display-1" className={styles.title}>
+    <Text variant={variant} className={styles.title}>
       {title}
     </Text>
   );

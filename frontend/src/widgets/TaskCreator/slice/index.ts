@@ -1,11 +1,11 @@
-import type { PayloadAction } from "@reduxjs/toolkit";
-import { createSlice } from "@reduxjs/toolkit";
-import { DEFAULT_VARS_COUNT } from "../consts";
 import {
   ConstraintSenseEnum,
   ObjectiveSenseEnum,
   VariablesDomainEnum,
-} from "../types";
+} from "@/shared/types";
+import type { PayloadAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
+import { DEFAULT_VARS_COUNT } from "../consts";
 
 export interface TaskCreatorState {
   varsCount: number;

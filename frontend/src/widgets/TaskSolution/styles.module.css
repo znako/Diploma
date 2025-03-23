@@ -1,5 +1,6 @@
 .TaskSolution {
   flex-basis: 50%;
+  padding-bottom: 20px;
 }
 
 .emptyMessage {

@@ -11,15 +11,19 @@ import { useEffect, useMemo } from "react";
 import { useSolveMilpMutation } from "@/api";
 import { ErrorResponse } from "@/api/types";
 import { Title } from "@/shared/components/Title";
-import { useAppDispatch, useAppSelector } from "@/shared/hooks";
-import { ExcelUploader } from "../ExcelUploader";
 import {
-  MAP_VAR_NUMBER_TO_NAME,
   SELECT_CONSTRAINT_SENSE_OPTIONS,
   SELECT_OBJECTIVE_SENSE_OPTIONS,
   SELECT_VAR_DOMAIN_OPTIONS,
-  SELECT_VARS_COUNT_OPTIONS,
-} from "./consts";
+} from "@/shared/consts";
+import { useAppDispatch, useAppSelector } from "@/shared/hooks";
+import {
+  ConstraintSenseEnum,
+  ObjectiveSenseEnum,
+  VariablesDomainEnum,
+} from "@/shared/types";
+import { ExcelUploader } from "../ExcelUploader";
+import { MAP_VAR_NUMBER_TO_NAME, SELECT_VARS_COUNT_OPTIONS } from "./consts";
 import {
   convertCreatingTaskDataToMilpDTO,
   createArrayByLength,
@@ -40,11 +44,6 @@ import {
 } from "./selectors";
 import { taskCreatorActions } from "./slice";
 import styles from "./styles.module.css";
-import {
-  ConstraintSenseEnum,
-  ObjectiveSenseEnum,
-  VariablesDomainEnum,
-} from "./types";
 
 export const TaskCreator = () => {
   const dispatch = useAppDispatch();

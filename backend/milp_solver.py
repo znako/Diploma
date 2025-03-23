@@ -155,7 +155,6 @@ def solve_milp_route():
 
 # Валидация данных
 def validate_data(df):
-    print(df)
     # Определим индексы или названия строк, в которые помещены одноэлементные значения
     index_variable_count = 0
     index_objective_sense = 3

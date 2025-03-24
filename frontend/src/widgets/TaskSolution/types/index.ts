@@ -8,3 +8,9 @@ export type Solution = {
   /* Значения переменных, где ключ - это индекс переменной в строковом формате */
   variable_values?: Record<string, number>;
 };
+
+export type SolutionResponse = {
+  solution: Solution;
+  /* Base64 строка, которая хранит условия задачи в excel формате */
+  conditions_excel: string;
+};

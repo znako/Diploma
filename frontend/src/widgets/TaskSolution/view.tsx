@@ -7,14 +7,19 @@ import cn from "classnames";
 import { useEffect, useState } from "react";
 import { MAP_VAR_NUMBER_TO_NAME } from "../TaskCreator/consts";
 import { OVERFLOW_VARS_NUMBER } from "./consts";
-import { selectSolutionData, selectSolutionIsLoading } from "./selectors";
+import {
+  selectSolutionConditions,
+  selectSolutionData,
+  selectSolutionIsLoading,
+} from "./selectors";
 import { taskSolutionActions } from "./slice";
 import styles from "./styles.module.css";
 
 export const TaskSolution = () => {
   const [showMore, setShowMore] = useState(false);
   const dispatch = useAppDispatch();
-  const data = useAppSelector(selectSolutionData);
+  const solution = useAppSelector(selectSolutionData);
+  const conditions = useAppSelector(selectSolutionConditions);
   const isLoading = useAppSelector(selectSolutionIsLoading);
   const { setIsLoading } = taskSolutionActions;
 
@@ -38,7 +43,7 @@ export const TaskSolution = () => {
         />
       );
     }
-    if (!data) {
+    if (!solution) {
       return (
         <Text
           variant="body-2"
@@ -51,11 +56,16 @@ export const TaskSolution = () => {
     }
     return (
       <Flex direction="column" gap={5}>
-        <Text variant="header-1">{data.message}</Text>
-        {data.objective !== undefined && (
-          <Text variant="header-1">Значение функции: {data.objective}</Text>
+        {!!conditions && (
+          <Text variant="header-1">
+            <a href={conditions}>Условие задачи</a>
+          </Text>
         )}
-        {data.variable_values && (
+        <Text variant="header-1">{solution.message}</Text>
+        {solution.objective !== undefined && (
+          <Text variant="header-1">Значение функции: {solution.objective}</Text>
+        )}
+        {solution.variable_values && (
           <Flex direction={"column"} gap={2}>
             <Text variant="header-1">Значение переменных:</Text>
             <Flex
@@ -64,7 +74,7 @@ export const TaskSolution = () => {
                 [styles.hide]: !showMore,
               })}
             >
-              {Object.entries(data.variable_values).map(
+              {Object.entries(solution.variable_values).map(
                 ([index, value], _, varsArray) => (
                   <Text variant="header-1" key={`variable_values_${index}`}>
                     {varsArray.length >
@@ -75,7 +85,7 @@ export const TaskSolution = () => {
                   </Text>
                 )
               )}
-              {Object.entries(data.variable_values).length >
+              {Object.entries(solution.variable_values).length >
                 OVERFLOW_VARS_NUMBER &&
                 !showMore && (
                   <Button

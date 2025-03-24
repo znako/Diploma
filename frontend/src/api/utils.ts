@@ -1,7 +1,8 @@
 import { AppDispatch } from "@/configs/store";
 import { toaster } from "@/shared/components/Toaster";
 import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
-import { Solution, taskSolutionActions } from "@/widgets/TaskSolution";
+import { taskSolutionActions } from "@/widgets/TaskSolution";
+import { SolutionResponse } from "@/widgets/TaskSolution/types";
 import { BACKEND_URL } from "./consts";
 
 let currentSSEConnection: EventSource;
@@ -20,8 +21,27 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
     // то завершаем процесс.
     try {
       // Попытка распарсить сообщение как JSON – если получится, то это финальный результат.
-      const result = JSON.parse(message) as Solution;
-      dispatch(taskSolutionActions.setData(result));
+      const payload = JSON.parse(message) as SolutionResponse;
+      // Извлекаем решение и base64 строку Excel-файла с условиями.
+      const solution = payload.solution;
+      const base64Excel = payload.conditions_excel;
+
+      // Декодируем base64 в бинарные данные и создаём Blob. Тип для .xlsx:
+      // 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      const binaryString = atob(base64Excel);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Генерируем URL для скачивания или отображения файла
+      const excelUrl = URL.createObjectURL(blob);
+      dispatch(taskSolutionActions.setSolution(solution));
+      dispatch(taskSolutionActions.setCondition(excelUrl));
       dispatch(taskSolutionActions.setIsLoading(false));
       currentSSEConnection.close();
     } catch {
@@ -52,7 +72,6 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
       theme: "danger",
     });
     dispatch(taskSolutionActions.setIsLoading(false));
-    localStorage.removeItem(TASK_ID_LOCAL_STORAGE_KEY);
     currentSSEConnection.close();
   };
 };

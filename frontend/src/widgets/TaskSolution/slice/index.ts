@@ -3,12 +3,14 @@ import { createSlice } from "@reduxjs/toolkit";
 import { Solution } from "../types";
 
 export interface TaskSolutionState {
-  data: Solution | null;
+  solution: Solution | null;
+  conditions: string | null;
   isLoading: boolean | null;
 }
 
 const initialState: TaskSolutionState = {
-  data: null,
+  solution: null,
+  conditions: null,
   isLoading: null,
 };
 
@@ -16,8 +18,11 @@ export const taskSolutionSlice = createSlice({
   name: "taskSolution",
   initialState,
   reducers: {
-    setData: (state, action: PayloadAction<Solution>) => {
-      state.data = action.payload;
+    setSolution: (state, action: PayloadAction<Solution>) => {
+      state.solution = action.payload;
+    },
+    setCondition: (state, action: PayloadAction<string>) => {
+      state.conditions = action.payload;
     },
     setIsLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;

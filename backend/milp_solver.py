@@ -1,3 +1,4 @@
+import base64
 import json
 import math
 import os
@@ -13,7 +14,8 @@ from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
-from sqlalchemy import JSON, Column, DateTime, Integer, String, create_engine
+from sqlalchemy import (JSON, Column, DateTime, Integer, String, Text,
+                        create_engine)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 app = Flask(__name__)
@@ -33,6 +35,7 @@ class Task(Base):
     task_id = Column(String, unique=True, index=True, nullable=False)
     conditions = Column(JSON, nullable=False)  # исходные условия задачи (JSON)
     solution = Column(JSON)  # решение задачи (JSON), может быть пустым, если задача не решена
+    conditions_excel = Column(Text)  # новое поле для хранения сгенерированного Excel файла в виде base64 строки
     upload_time = Column(DateTime, default=datetime.now)  # время загрузки задачи
     solve_time = Column(DateTime)  # время завершения решения задачи
     
@@ -146,9 +149,17 @@ def solve_milp_route():
         return handle_exception(e)
 
     task_id = str(uuid.uuid4())
+    conditions_excel = generate_excel_from_conditions(data)
+    db = SessionLocal()
+    # Создаем запись в БД (upload_time установится автоматически)
+    task_record = Task(task_id=task_id, conditions=data, conditions_excel=conditions_excel)
+    db.add(task_record)
+    db.commit()
+    db.close()
+
     # Запускаем фоновую задачу
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(process_excel_task, task_id, model, data)
+    executor.submit(process_excel_task, task_id, model)
     executor.shutdown(wait=False)  # не блокируем поток
     return jsonify({'task_id': task_id}), 202
 
@@ -213,7 +224,7 @@ def validate_data(df):
             float(df.iloc[0, 6 + 3*i])
         except:
             raise ValueError(f"Неверно задана правая часть в {i+1}-м ограничении")
-        if df.iloc[0, 7 + 3*i] != '==' and df.iloc[0, 7 + 3*i] != '<=' and df.iloc[0, 7 + 3*i] != '>=':
+        if df.iloc[0, 7 + 3*i] != '=' and df.iloc[0, 7 + 3*i] != '<=' and df.iloc[0, 7 + 3*i] != '>=':
             raise ValueError(f"Неверно задан знак ограничения в {i+1}-м ограничении")
 
 # Преобразование данных в JSON
@@ -259,14 +270,51 @@ def convert_to_json(df):
 
     return data_json
 
+def generate_excel_from_conditions(conditions: dict) -> str:
+    """
+    Генерирует Excel-файл из условий задачи (conditions) и возвращает его содержимое, закодированное в base64.
+    Для простоты создаётся таблица с одной строкой, где глобальные параметры записаны в отдельные столбцы.
+    """
+    num_var = len(conditions.get("variable_domains", []))
+    num_constraints = len(conditions.get("constraints", []))
+
+    # Заполняем словарь данных для одного ряда Excel.
+    data = {
+        "Количество переменных": [num_var] + [None] * (num_var - 1),
+        "Указание на целочисленность": conditions.get("variable_domains", []),
+        "Коэффициенты функции": [str(x) for x in conditions.get("objective", {}).get("coefficients", [])],
+        "Вид оптимизации": [conditions.get("objective", {}).get("sense", "")] + [None] * (num_var - 1),
+        "Количество ограничений": [num_constraints] + [None] * (num_var - 1)
+    }
+    
+    # Для каждого ограничения добавляем 3 колонки: коэффициенты, правая часть и знак.
+    for i, constr in enumerate(conditions.get("constraints", []), start=1):
+        col_coeff = f"Коэффициенты ограничения {i}"
+        col_rhs   = f"Правая часть ограничения {i}"
+        col_sign  = f"Знак ограничения {i}"
+        data[col_coeff] = [str(x) for x in constr.get("coefficients", [])]
+        data[col_rhs]   = [constr.get("rhs", "")] + [None] * (num_var - 1)
+        data[col_sign]  = [constr.get("sense", "")] + [None] * (num_var - 1)
+    
+    # Создаем DataFrame
+    df = pd.DataFrame(data)
+    
+    # Записываем DataFrame в Excel в памяти
+    output = BytesIO()
+    df.to_excel(output, index=False)
+    excel_bytes = output.getvalue()
+    
+    # Кодируем в base64 и возвращаем строку
+    b64_excel = base64.b64encode(excel_bytes).decode('utf-8')
+    return b64_excel
+
+
 # Фоновая функция для обработки Excel–запроса и решения задачи
-def process_excel_task(task_id, model, conditions_json):
+def process_excel_task(task_id, model):
     tasks[task_id] = {"status": "processing", "log": [], "result": None}
     db = SessionLocal()
-    # Создаем запись в БД (upload_time установится автоматически)
-    task_record = Task(task_id=task_id, conditions=conditions_json)
-    db.add(task_record)
-    db.commit()
+    # print(db.query(Task).filter(Task.task_id).first())
+    task_record = db.query(Task).filter(Task.task_id == task_id).first()
 
     try:
         tasks[task_id]["log"].append("Начало решения задачи...")
@@ -279,19 +327,21 @@ def process_excel_task(task_id, model, conditions_json):
                 tasks[task_id]["log"].append("Решение задачи в процессе...")
                 time.sleep(1)
             solution = future.result()
-        finish_time = datetime.now(timezone.utc)
         tasks[task_id]["log"].append("Решение задачи завершено.")
         tasks[task_id]["result"] = solution
         tasks[task_id]["status"] = "done"
 
         # Обновляем запись в БД – сохраняем решение и время завершения
         task_record.solution = solution
-        task_record.solve_time = finish_time
         db.commit()
     except Exception as e:
-        tasks[task_id]["log"].append(f"Ошибка: {str(e)}")
+        print(f"Ошибка: {str(e)}")
         tasks[task_id]["status"] = "error"
     finally:
+        print(task_record.task_id)
+        finish_time = datetime.now(timezone.utc)
+        task_record.solve_time = finish_time
+        db.commit()
         db.close()
 
 # Эндпоинт для загрузки Excel и запуска фоновой задачи
@@ -322,7 +372,6 @@ def upload_excel():
         return jsonify({'error': str(e)}), 400
 
     # Конвертация в JSON структуру
-    data = None
     try:
        data = convert_to_json(df)
     except Exception as e:
@@ -336,13 +385,31 @@ def upload_excel():
         # print(e)
         return handle_exception(e)
 
+    # Записываем DataFrame в Excel в памяти
+    try:
+        output = BytesIO()
+        df.to_excel(output, index=False)
+        excel_bytes = output.getvalue()
+        
+        # Кодируем в base64 и возвращаем строку
+        b64_excel = base64.b64encode(excel_bytes).decode('utf-8')
+    except Exception as e:
+        return handle_exception(e)
 
     task_id = str(uuid.uuid4())
+    db = SessionLocal()
+    # Создаем запись в БД (upload_time установится автоматически)
+    task_record = Task(task_id=task_id, conditions=data, conditions_excel=b64_excel)
+    db.add(task_record)
+    db.commit()
+    db.close()
+
     # Запускаем фоновую задачу
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(process_excel_task, task_id, model, data)
+    executor.submit(process_excel_task, task_id, model)
     executor.shutdown(wait=False)  # не блокируем поток
     return jsonify({'task_id': task_id}), 202
+
 
 # Эндпоинт SSE для получения обновлений по задаче (task_progress)
 @app.route('/task_progress/<task_id>', methods=['GET'])
@@ -351,20 +418,27 @@ def task_progress(task_id):
         last_index = 0
         # Отправляем данные до тех пор, пока задача не завершена
         while True:
-            if task_id not in tasks:
-                yield "data: error: Задача не найдена\n\n"
+            session = SessionLocal()
+            # print(session.query(Task).filter(Task.task_id).first())
+            task_record = session.query(Task).filter(Task.task_id == task_id).first()
+            session.close()
+            if not task_record:
+                print("HEY")
+                yield "data: [error]" + "\n\n"
                 break
-            log = tasks[task_id]["log"]
-            while last_index < len(log):
-                yield "data: " + log[last_index] + "\n\n"
-                last_index += 1
-            if tasks[task_id]["status"] in ("done", "error"):
-                # Если задача завершена, отправляем итоговый результат (если он есть)
-                if tasks[task_id]["status"] == "done" and tasks[task_id]["result"] is not None:
-                    yield "data: " + json.dumps(tasks[task_id]["result"], ensure_ascii=False) + "\n\n"
-                if tasks[task_id]["status"] == "error":
-                    yield "data: " + "[error]" + "\n\n"
-                break
+            if task_record.solve_time is None:
+                yield "data: Задача в процессе выполнения...\n\n"
+            else:
+                # Задача завершена: если решение есть, отправляем его как JSON; иначе — сообщение об ошибке
+                if task_record.solution:
+                    payload = {}
+                    payload["solution"] = task_record.solution
+                    payload["conditions_excel"] = task_record.conditions_excel
+                    
+                    yield "data: " + json.dumps(payload, ensure_ascii=False) + "\n\n"
+                else:
+                    yield "data: [error]" + "\n\n"
+                    break
             time.sleep(1)
         yield "data: [end]\n\n"
     return Response(event_stream(), mimetype="text/event-stream")

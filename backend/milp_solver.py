@@ -273,7 +273,6 @@ def convert_to_json(df):
 def generate_excel_from_conditions(conditions: dict) -> str:
     """
     Генерирует Excel-файл из условий задачи (conditions) и возвращает его содержимое, закодированное в base64.
-    Для простоты создаётся таблица с одной строкой, где глобальные параметры записаны в отдельные столбцы.
     """
     num_var = len(conditions.get("variable_domains", []))
     num_constraints = len(conditions.get("constraints", []))

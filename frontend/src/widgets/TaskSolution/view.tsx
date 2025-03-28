@@ -2,11 +2,16 @@ import { openSSEConnection } from "@/api/utils";
 import { Title } from "@/shared/components/Title";
 import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
 import { useAppDispatch, useAppSelector } from "@/shared/hooks";
-import { Button, Flex, Progress, Text } from "@gravity-ui/uikit";
+import { Button, Flex, Progress, Select, Text } from "@gravity-ui/uikit";
 import cn from "classnames";
 import { useEffect, useState } from "react";
 import { MAP_VAR_NUMBER_TO_NAME } from "../TaskCreator/consts";
-import { OVERFLOW_VARS_NUMBER } from "./consts";
+import {
+  FRACTION_DIGITS_DEFAULT_VALUE,
+  FRACTION_DIGITS_OPTIONS,
+  OVERFLOW_VARS_NUMBER,
+  PROGRESS_BAR_VALUE,
+} from "./consts";
 import {
   selectSolutionConditions,
   selectSolutionData,
@@ -16,6 +21,9 @@ import { taskSolutionActions } from "./slice";
 import styles from "./styles.module.css";
 
 export const TaskSolution = () => {
+  const [maximumFractionDigits, setMaximumFractionDigits] = useState<number>(
+    Number(FRACTION_DIGITS_DEFAULT_VALUE[0])
+  );
   const [showMore, setShowMore] = useState(false);
   const dispatch = useAppDispatch();
   const solution = useAppSelector(selectSolutionData);
@@ -31,6 +39,10 @@ export const TaskSolution = () => {
     }
   }, []);
 
+  useEffect(() => {
+    setShowMore(false);
+  }, [solution]);
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -38,7 +50,7 @@ export const TaskSolution = () => {
           className={styles.progress}
           text="Задача решается..."
           theme="info"
-          value={80}
+          value={PROGRESS_BAR_VALUE}
           loading={true}
         />
       );
@@ -56,6 +68,18 @@ export const TaskSolution = () => {
     }
     return (
       <Flex direction="column" gap={5}>
+        {(solution?.objective !== undefined || !!solution?.variable_values) && (
+          <Flex gap={2} alignItems={"center"}>
+            <Text variant="body-2" color="secondary">
+              Количество знаков после запятой
+            </Text>
+            <Select
+              options={FRACTION_DIGITS_OPTIONS}
+              defaultValue={FRACTION_DIGITS_DEFAULT_VALUE}
+              onUpdate={(value) => setMaximumFractionDigits(Number(value[0]))}
+            />
+          </Flex>
+        )}
         {!!conditions && (
           <Text variant="header-1">
             <a href={conditions}>Условие задачи</a>
@@ -63,7 +87,12 @@ export const TaskSolution = () => {
         )}
         <Text variant="header-1">{solution.message}</Text>
         {solution.objective !== undefined && (
-          <Text variant="header-1">Значение функции: {solution.objective}</Text>
+          <Text variant="header-1">
+            Значение функции:{" "}
+            {solution.objective.toLocaleString(undefined, {
+              maximumFractionDigits: Number(maximumFractionDigits),
+            })}
+          </Text>
         )}
         {solution.variable_values && (
           <Flex direction={"column"} gap={2}>
@@ -81,28 +110,32 @@ export const TaskSolution = () => {
                     Object.entries(MAP_VAR_NUMBER_TO_NAME).length
                       ? index
                       : MAP_VAR_NUMBER_TO_NAME[index]}
-                    : {value}
+                    :{" "}
+                    {value.toLocaleString(undefined, {
+                      maximumFractionDigits: Number(maximumFractionDigits),
+                    })}
                   </Text>
                 )
               )}
               {Object.entries(solution.variable_values).length >
                 OVERFLOW_VARS_NUMBER &&
-                !showMore && (
+                (!showMore ? (
                   <Button
                     className={styles.toggleShowMoreButton}
                     onClick={() => setShowMore(true)}
                   >
                     Показать все
                   </Button>
-                )}
-              {showMore && (
-                <Button
-                  className={styles.toggleShowMoreButton}
-                  onClick={() => setShowMore(false)}
-                >
-                  Скрыть
-                </Button>
-              )}
+                ) : (
+                  showMore && (
+                    <Button
+                      className={styles.toggleShowMoreButton}
+                      onClick={() => setShowMore(false)}
+                    >
+                      Скрыть
+                    </Button>
+                  )
+                ))}
             </Flex>
           </Flex>
         )}

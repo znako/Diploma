@@ -86,9 +86,11 @@ def create_model(data):
             model.constraints.add(expr <= constr['rhs'])
         elif constr['sense'] == '>=':
             model.constraints.add(expr >= constr['rhs'])
-        elif constr['sense'] == '==':
+        elif constr['sense'] == '=':
             model.constraints.add(expr == constr['rhs'])
 
+    # Поддерживаем анализ чувствительности к коэффициентам
+    model.dual = Suffix(direction=Suffix.IMPORT)
     return model
 
 def solve_model(model):
@@ -96,13 +98,26 @@ def solve_model(model):
     result = solver.solve(model)
 
     if result.solver.status == SolverStatus.ok:
+        try:
+            sensitivity = []
+            for (i, constraint) in model.constraints.items():
+                sensitivity.append({
+                    "name": f"Ограничение {i}",
+                    "value": str(constraint()),
+                    "lslack": str(constraint.lslack()),
+                    "uslack": str(constraint.uslack()),
+                    "dual": str(model.dual[constraint])
+                })
+        except Exception as ex:
+            print(ex, "Не удалось получить dual значения")
         termination_condition = str(result.solver.termination_condition)
         if result.solver.termination_condition == TerminationCondition.optimal:
             return {
                 'termination_condition': termination_condition,
                 'message': "Найдено оптимальное решение задачи.",
                 'objective': model.obj(),
-                'variable_values': {i: model.variables[i].value for i in model.variables}
+                'variable_values': {i: model.variables[i].value for i in model.variables},
+                'sensitivity': sensitivity,
             }
         elif result.solver.termination_condition == TerminationCondition.infeasible:
             return {
@@ -120,13 +135,13 @@ def solve_model(model):
                     'termination_condition': termination_condition,
                     'message': str(result.solver.termination_condition),
                     'objective': model.obj(),
-                    'variable_values': {i: model.variables[i].value for i in model.variables}
+                    'variable_values': {i: model.variables[i].value for i in model.variables},
+                    'sensitivity': sensitivity,
                 }
             except:
                 return {
-                    # 'status': status,
                     'termination_condition': termination_condition,
-                    'message': str(result.solver.termination_condition),
+                    'message': f"Статус решателя: {str(result.solver.termination_condition)}",
                 }
     else:
         raise Exception('Что-то пошло не так попробуйте позже или введите другую задачу')

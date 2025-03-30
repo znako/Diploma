@@ -13,6 +13,6 @@ export enum ObjectiveSenseEnum {
 
 export enum ConstraintSenseEnum {
   LESS_OR_EQUAL = "<=",
-  MORE_OR_EQUAL = "=>",
+  MORE_OR_EQUAL = ">=",
   EQUAL = "=",
 }

@@ -7,6 +7,7 @@ import { Button, Flex, Progress, Select, Text } from "@gravity-ui/uikit";
 import cn from "classnames";
 import { useEffect, useState } from "react";
 import { MAP_VAR_NUMBER_TO_NAME } from "../TaskCreator/consts";
+import { SensitivityTable } from "./components/SensitivityTable";
 import {
   FRACTION_DIGITS_DEFAULT_VALUE,
   FRACTION_DIGITS_OPTIONS,
@@ -32,6 +33,9 @@ export const TaskSolution = () => {
   const isLoading = useAppSelector(selectSolutionIsLoading);
   const { setIsLoading } = taskSolutionActions;
   const [cancelTask] = useCancelTaskMutation();
+  const shouldHideVars =
+    Object.entries(solution?.variable_values ?? {}).length >
+    OVERFLOW_VARS_NUMBER;
 
   useEffect(() => {
     const taskId = localStorage.getItem(TASK_ID_LOCAL_STORAGE_KEY);
@@ -118,7 +122,7 @@ export const TaskSolution = () => {
             <Flex
               direction={"column"}
               className={cn(styles.variablesContainer, {
-                [styles.hide]: !showMore,
+                [styles.hide]: !showMore && shouldHideVars,
               })}
             >
               {Object.entries(solution.variable_values).map(
@@ -135,8 +139,7 @@ export const TaskSolution = () => {
                   </Text>
                 )
               )}
-              {Object.entries(solution.variable_values).length >
-                OVERFLOW_VARS_NUMBER &&
+              {shouldHideVars &&
                 (!showMore ? (
                   <Button
                     className={styles.toggleShowMoreButton}
@@ -156,6 +159,13 @@ export const TaskSolution = () => {
                 ))}
             </Flex>
           </Flex>
+        )}
+        {!!solution.sensitivity && !!solution.sensitivity.length ? (
+          <SensitivityTable sensitivity={solution.sensitivity} />
+        ) : (
+          <Text variant="header-1" color="secondary">
+            Нет данных о чуствительности решения к изменению параметров
+          </Text>
         )}
       </Flex>
     );

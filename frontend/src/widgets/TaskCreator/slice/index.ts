@@ -17,6 +17,8 @@ export interface TaskCreatorState {
   constraintsSense: ConstraintSenseEnum[];
   constraintsRhs: Array<null | string>;
 
+  disableUploadButton: boolean | null;
+
   // Ошибки
   objectiveCoeffsError: string | null;
   constraintsCoeffsError: string | null;
@@ -40,6 +42,8 @@ const initialState: TaskCreatorState = {
     ConstraintSenseEnum.LESS_OR_EQUAL,
   ],
   constraintsRhs: [null, null],
+
+  disableUploadButton: false,
 
   // Ошибки
   objectiveCoeffsError: null,
@@ -137,6 +141,10 @@ export const taskCreatorSlice = createSlice({
       } = action;
       state.constraintsRhs[index] = rhs;
       state.constraintsCoeffsError = null;
+    },
+
+    setDisableUploadButton: (state, action: PayloadAction<boolean>) => {
+      state.disableUploadButton = action.payload;
     },
 
     // Ошибки

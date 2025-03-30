@@ -2,6 +2,7 @@ import { useSolveMilpExcelMutation } from "@/api";
 import { ErrorResponse } from "@/api/types";
 import { Title } from "@/shared/components/Title";
 import {
+  BASE_TOASTER_ERROR_MESSAGE,
   SELECT_CONSTRAINT_SENSE_OPTIONS,
   SELECT_OBJECTIVE_SENSE_OPTIONS,
   SELECT_VAR_DOMAIN_OPTIONS,
@@ -9,7 +10,10 @@ import {
 import { useAppDispatch, useAppSelector } from "@/shared/hooks";
 import { Button, Card, Flex, Modal, Text, useToaster } from "@gravity-ui/uikit";
 import { ChangeEvent, useEffect, useState } from "react";
-import { selectExcelUploaderValue } from "./selectors";
+import {
+  selectDisableUploadButton,
+  selectExcelUploaderValue,
+} from "./selectors";
 import { excelUploaderActions } from "./slice";
 import styles from "./styles.module.css";
 
@@ -18,6 +22,7 @@ export const ExcelUploader = () => {
   const dispatch = useAppDispatch();
   const { setValue } = excelUploaderActions;
   const excelValue = useAppSelector(selectExcelUploaderValue);
+  const disableUploadButton = useAppSelector(selectDisableUploadButton);
   const [solveMilpExcel, { error }] = useSolveMilpExcelMutation();
   const [openModal, setOpenModal] = useState(false);
 
@@ -37,8 +42,7 @@ export const ExcelUploader = () => {
       add({
         name: "ExcelUploaderError",
         title:
-          (error as ErrorResponse)?.data?.error ??
-          "Что-то пошло не так, попробуйте еще раз",
+          (error as ErrorResponse)?.data?.error ?? BASE_TOASTER_ERROR_MESSAGE,
         theme: "danger",
       });
     }
@@ -151,6 +155,7 @@ export const ExcelUploader = () => {
             </Text>
           </Card>
           <input
+            disabled={!!disableUploadButton}
             type="file"
             value={excelValue ?? ""}
             onChange={onChangeFileInput}

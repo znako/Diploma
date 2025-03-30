@@ -9,6 +9,11 @@
 
 .progress {
   width: 250px;
+  margin: 0;
+}
+
+.cancelTaskButton {
+  width: 180px;
 }
 
 .variablesContainer {

@@ -39,3 +39,6 @@ export const SELECT_CONSTRAINT_SENSE_OPTIONS: Array<{
   { value: ConstraintSenseEnum.MORE_OR_EQUAL, content: "≥" },
   { value: ConstraintSenseEnum.EQUAL, content: "=" },
 ];
+
+export const BASE_TOASTER_ERROR_MESSAGE =
+  "Что-то пошло не так, попробуйте еще раз";

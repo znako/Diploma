@@ -1,3 +1,4 @@
+import { useCancelTaskMutation } from "@/api";
 import { openSSEConnection } from "@/api/utils";
 import { Title } from "@/shared/components/Title";
 import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
@@ -30,6 +31,7 @@ export const TaskSolution = () => {
   const conditions = useAppSelector(selectSolutionConditions);
   const isLoading = useAppSelector(selectSolutionIsLoading);
   const { setIsLoading } = taskSolutionActions;
+  const [cancelTask] = useCancelTaskMutation();
 
   useEffect(() => {
     const taskId = localStorage.getItem(TASK_ID_LOCAL_STORAGE_KEY);
@@ -43,16 +45,32 @@ export const TaskSolution = () => {
     setShowMore(false);
   }, [solution]);
 
+  const cancelTaskCallback = () => {
+    const taskId = localStorage.getItem(TASK_ID_LOCAL_STORAGE_KEY);
+    if (taskId) {
+      cancelTask(taskId);
+    }
+  };
+
   const renderContent = () => {
     if (isLoading) {
       return (
-        <Progress
-          className={styles.progress}
-          text="Задача решается..."
-          theme="info"
-          value={PROGRESS_BAR_VALUE}
-          loading={true}
-        />
+        <Flex gap={5} justifyContent="center" alignItems="center">
+          <Progress
+            className={styles.progress}
+            text="Задача решается..."
+            theme="info"
+            value={PROGRESS_BAR_VALUE}
+            loading={true}
+          />
+          <Button
+            className={styles.cancelTaskButton}
+            view="outlined-danger"
+            onClick={cancelTaskCallback}
+          >
+            Отменить решение
+          </Button>
+        </Flex>
       );
     }
     if (!solution) {

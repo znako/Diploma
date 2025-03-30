@@ -7,3 +7,5 @@ export type ErrorResponse = {
 
 export type SolveMilpResponse = { task_id: string };
 export type SolveMilpExcelResponse = { task_id: string };
+
+export type CancelTaskResponse = { message: string };

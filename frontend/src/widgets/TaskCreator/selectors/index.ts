@@ -19,6 +19,9 @@ export const selectConstraintsSense = (state: RootState) =>
 export const selectConstraintsRhs = (state: RootState) =>
   state.taskCreator.constraintsRhs;
 
+export const selectDisableUploadButton = (state: RootState) =>
+  state.taskCreator.disableUploadButton;
+
 // Ошибки
 export const selectObjectiveCoeffsError = (state: RootState) =>
   state.taskCreator.objectiveCoeffsError;

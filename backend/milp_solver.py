@@ -14,7 +14,7 @@ from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
-from sqlalchemy import (JSON, Column, DateTime, Integer, String, Text,
+from sqlalchemy import (JSON, Boolean, Column, DateTime, Integer, String, Text,
                         create_engine)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -38,6 +38,7 @@ class Task(Base):
     conditions_excel = Column(Text)  # новое поле для хранения сгенерированного Excel файла в виде base64 строки
     upload_time = Column(DateTime, default=datetime.now)  # время загрузки задачи
     solve_time = Column(DateTime)  # время завершения решения задачи
+    canceled = Column(Boolean, default=False)  # отмена решения задачи пользователем
     
 # Создание таблицы, если она еще не создана
 Base.metadata.create_all(bind=engine)
@@ -140,7 +141,7 @@ def handle_exception(e):
     response.status_code = 500
     return response
 
-@app.route('/solve_milp', methods=['POST'])
+@app.route('/task', methods=['POST'])
 def solve_milp_route():
     data = request.json
     try:
@@ -322,6 +323,10 @@ def process_excel_task(task_id, model):
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(solve_model, model)
             while not future.done():
+                if task_record.canceled == True:
+                    tasks[task_id]["log"].append("Решение задачи отменено.")
+                    tasks[task_id]["status"] = "canceled"
+                    return
                 # Каждую секунду добавляем сообщение о ходе выполнения
                 tasks[task_id]["log"].append("Решение задачи в процессе...")
                 time.sleep(1)
@@ -344,7 +349,7 @@ def process_excel_task(task_id, model):
         db.close()
 
 # Эндпоинт для загрузки Excel и запуска фоновой задачи
-@app.route('/solve_milp/excel', methods=['POST'])
+@app.route('/task/excel', methods=['POST'])
 def upload_excel():
     # Проверка наличия файла в запросе
     if 'file' not in request.files:
@@ -411,7 +416,7 @@ def upload_excel():
 
 
 # Эндпоинт SSE для получения обновлений по задаче (task_progress)
-@app.route('/task_progress/<task_id>', methods=['GET'])
+@app.route('/task/task_progress/<task_id>', methods=['GET'])
 def task_progress(task_id):
     def event_stream():
         last_index = 0
@@ -441,6 +446,22 @@ def task_progress(task_id):
             time.sleep(1)
         yield "data: [end]\n\n"
     return Response(event_stream(), mimetype="text/event-stream")
+
+@app.route('/task/cancel_task/<task_id>', methods=['POST'])
+def cancel_task(task_id):
+    session = SessionLocal()
+    task_record = session.query(Task).filter(Task.task_id == task_id).first()
+    
+    if task_id not in tasks:
+        session.close()
+        return jsonify({"error": "Задача не найдена"}), 404
+    # Устанавливаем флаг отмены
+    task_record.canceled = True
+    session.close()
+    tasks[task_id]["canceled"] = True
+    # Здесь можно добавить логирование отмены
+    tasks[task_id]["log"].append("Запрос на отмену получен.")
+    return jsonify({"message": "Задача отменена"}), 200
 
 if __name__ == '__main__':
     # upload_excel()

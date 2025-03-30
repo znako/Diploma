@@ -12,6 +12,7 @@ import { useSolveMilpMutation } from "@/api";
 import { ErrorResponse } from "@/api/types";
 import { Title } from "@/shared/components/Title";
 import {
+  BASE_TOASTER_ERROR_MESSAGE,
   SELECT_CONSTRAINT_SENSE_OPTIONS,
   SELECT_OBJECTIVE_SENSE_OPTIONS,
   SELECT_VAR_DOMAIN_OPTIONS,
@@ -35,6 +36,7 @@ import {
   selectConstraintsCount,
   selectConstraintsRhs,
   selectConstraintsSense,
+  selectDisableUploadButton,
   selectObjectiveCoeffs,
   selectObjectiveCoeffsError,
   selectObjectiveSense,
@@ -57,6 +59,7 @@ export const TaskCreator = () => {
   const constraintsCoeffs = useAppSelector(selectConstraintsCoeffs);
   const constraintsSense = useAppSelector(selectConstraintsSense);
   const constraintsRhs = useAppSelector(selectConstraintsRhs);
+  const disableUploadButton = useAppSelector(selectDisableUploadButton);
   const objectiveCoeffsError = useAppSelector(selectObjectiveCoeffsError);
   const constraintsCoeffsError = useAppSelector(selectConstraintsCoeffsError);
   const {
@@ -78,8 +81,7 @@ export const TaskCreator = () => {
       add({
         name: "SolveMilpError",
         title:
-          (error as ErrorResponse)?.data?.error ??
-          "Что-то пошло не так, попробуйте еще раз",
+          (error as ErrorResponse)?.data?.error ?? BASE_TOASTER_ERROR_MESSAGE,
         theme: "danger",
       });
     }
@@ -271,7 +273,11 @@ export const TaskCreator = () => {
             onClick={onSolveMilp}
             className={styles.sendButton}
             size="l"
-            disabled={!!constraintsCoeffsError || !!objectiveCoeffsError}
+            disabled={
+              !!constraintsCoeffsError ||
+              !!objectiveCoeffsError ||
+              !!disableUploadButton
+            }
           >
             Решить
           </Button>

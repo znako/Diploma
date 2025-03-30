@@ -1,19 +1,27 @@
 import { AppDispatch } from "@/configs/store";
 import { toaster } from "@/shared/components/Toaster";
-import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
+import {
+  BASE_TOASTER_ERROR_MESSAGE,
+  TASK_ID_LOCAL_STORAGE_KEY,
+} from "@/shared/consts";
+import { excelUploaderActions } from "@/widgets/ExcelUploader";
+import { taskCreatorActions } from "@/widgets/TaskCreator";
 import { taskSolutionActions } from "@/widgets/TaskSolution";
 import { SolutionResponse } from "@/widgets/TaskSolution/types";
-import { BACKEND_URL } from "./consts";
+import { BASE_URL } from "./consts";
 
 let currentSSEConnection: EventSource;
 
-export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
+export const closeCurrentSSEConnection = () => {
   if (currentSSEConnection) {
     currentSSEConnection.close();
   }
-  currentSSEConnection = new EventSource(
-    `${BACKEND_URL}/task_progress/${taskId}`
-  );
+};
+
+export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
+  currentSSEConnection = new EventSource(`${BASE_URL}/task_progress/${taskId}`);
+  dispatch(taskCreatorActions.setDisableUploadButton(true));
+  dispatch(excelUploaderActions.setDisableUploadButton(true));
   currentSSEConnection.onmessage = (event) => {
     const message = event.data;
     console.log("Получено SSE сообщение", message);
@@ -43,19 +51,25 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
       dispatch(taskSolutionActions.setSolution(solution));
       dispatch(taskSolutionActions.setCondition(excelUrl));
       dispatch(taskSolutionActions.setIsLoading(false));
-      currentSSEConnection.close();
+      dispatch(taskCreatorActions.setDisableUploadButton(false));
+      dispatch(excelUploaderActions.setDisableUploadButton(false));
+      closeCurrentSSEConnection();
     } catch {
       // Если не JSON, то, скорее всего, это промежуточное сообщение (лог)
       // Можно проверить и, если это сообщение "[end]", закрыть соединение.
       if (message === "[end]") {
         dispatch(taskSolutionActions.setIsLoading(false));
-        currentSSEConnection.close();
+        dispatch(taskCreatorActions.setDisableUploadButton(false));
+        dispatch(excelUploaderActions.setDisableUploadButton(false));
+        closeCurrentSSEConnection();
       } else if (message === "[error]") {
         dispatch(taskSolutionActions.setIsLoading(false));
-        currentSSEConnection.close();
+        dispatch(taskCreatorActions.setDisableUploadButton(false));
+        dispatch(excelUploaderActions.setDisableUploadButton(false));
+        closeCurrentSSEConnection();
         toaster.add({
           name: "SseErrorMessage",
-          title: "Что-то пошло не так попробуйте снова",
+          title: BASE_TOASTER_ERROR_MESSAGE,
           theme: "danger",
         });
         localStorage.removeItem(TASK_ID_LOCAL_STORAGE_KEY);
@@ -68,10 +82,12 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
   currentSSEConnection.onerror = () => {
     toaster.add({
       name: "SseError",
-      title: "Что-то пошло не так попробуйте снова",
+      title: BASE_TOASTER_ERROR_MESSAGE,
       theme: "danger",
     });
     dispatch(taskSolutionActions.setIsLoading(false));
-    currentSSEConnection.close();
+    dispatch(taskCreatorActions.setDisableUploadButton(false));
+    dispatch(excelUploaderActions.setDisableUploadButton(false));
+    closeCurrentSSEConnection();
   };
 };

@@ -472,6 +472,7 @@ def cancel_task(task_id):
         return jsonify({"error": "Задача не найдена"}), 404
     # Устанавливаем флаг отмены
     task_record.canceled = True
+    session.commit()
     session.close()
     tasks[task_id]["canceled"] = True
     # Здесь можно добавить логирование отмены

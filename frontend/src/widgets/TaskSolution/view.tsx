@@ -161,7 +161,10 @@ export const TaskSolution = () => {
           </Flex>
         )}
         {!!solution.sensitivity && !!solution.sensitivity.length ? (
-          <SensitivityTable sensitivity={solution.sensitivity} />
+          <SensitivityTable
+            sensitivity={solution.sensitivity}
+            maximumFractionDigits={Number(maximumFractionDigits)}
+          />
         ) : (
           <Text variant="header-1" color="secondary">
             Нет данных о чуствительности решения к изменению параметров

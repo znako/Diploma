@@ -35,6 +35,7 @@ class Task(Base):
     task_id = Column(String, unique=True, index=True, nullable=False)
     conditions = Column(JSON, nullable=False)  # исходные условия задачи (JSON)
     solution = Column(JSON)  # решение задачи (JSON), может быть пустым, если задача не решена
+    solver = Column(String)  # решатель, который выбрал пользователь
     conditions_excel = Column(Text)  # новое поле для хранения сгенерированного Excel файла в виде base64 строки
     upload_time = Column(DateTime, default=datetime.now)  # время загрузки задачи
     solve_time = Column(DateTime)  # время завершения решения задачи
@@ -159,6 +160,8 @@ def handle_exception(e):
 @app.route('/task', methods=['POST'])
 def solve_milp_route():
     data = request.json
+    solver = data["solver"]
+    data.pop('solver', None)
     try:
         model = create_model(data)
     except Exception as e:
@@ -168,14 +171,14 @@ def solve_milp_route():
     conditions_excel = generate_excel_from_conditions(data)
     db = SessionLocal()
     # Создаем запись в БД (upload_time установится автоматически)
-    task_record = Task(task_id=task_id, conditions=data, conditions_excel=conditions_excel)
+    task_record = Task(task_id=task_id, conditions=data, conditions_excel=conditions_excel, solver=solver)
     db.add(task_record)
     db.commit()
     db.close()
 
     # Запускаем фоновую задачу
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(process_excel_task, task_id, model, data["solver"])
+    executor.submit(process_excel_task, task_id, model, solver)
     executor.shutdown(wait=False)  # не блокируем поток
     return jsonify({'task_id': task_id}), 202
 
@@ -419,7 +422,7 @@ def upload_excel():
     task_id = str(uuid.uuid4())
     db = SessionLocal()
     # Создаем запись в БД (upload_time установится автоматически)
-    task_record = Task(task_id=task_id, conditions=data, conditions_excel=b64_excel)
+    task_record = Task(task_id=task_id, conditions=data, conditions_excel=b64_excel, solver=solver)
     db.add(task_record)
     db.commit()
     db.close()

@@ -66,6 +66,7 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
         dispatch(taskSolutionActions.setIsLoading(false));
         dispatch(taskCreatorActions.setDisableUploadButton(false));
         dispatch(excelUploaderActions.setDisableUploadButton(false));
+        dispatch(taskSolutionActions.setInitialState());
         closeCurrentSSEConnection();
         toaster.add({
           name: "SseErrorMessage",

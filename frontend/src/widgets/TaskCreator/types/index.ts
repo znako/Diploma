@@ -1,6 +1,7 @@
 import {
   ConstraintSenseEnum,
   ObjectiveSenseEnum,
+  SolverEnum,
   VariablesDomainEnum,
 } from "@/shared/types";
 
@@ -22,4 +23,5 @@ export type MilpDTO = {
     rhs: number;
     sense: ConstraintSenseEnum;
   }[];
+  solver: SolverEnum;
 };

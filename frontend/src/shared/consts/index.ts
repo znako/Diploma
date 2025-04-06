@@ -1,6 +1,7 @@
 import {
   ConstraintSenseEnum,
   ObjectiveSenseEnum,
+  SolverEnum,
   VariablesDomainEnum,
 } from "../types";
 
@@ -42,3 +43,12 @@ export const SELECT_CONSTRAINT_SENSE_OPTIONS: Array<{
 
 export const BASE_TOASTER_ERROR_MESSAGE =
   "Что-то пошло не так, попробуйте еще раз";
+
+export const SELECT_SOLVER_OPTIONS: Array<{
+  value: SolverEnum;
+  content: string;
+}> = [
+  { value: SolverEnum.GLPK, content: "glpk" },
+  { value: SolverEnum.CBC, content: "coin-or" },
+  { value: SolverEnum.SCIP, content: "scip" },
+];

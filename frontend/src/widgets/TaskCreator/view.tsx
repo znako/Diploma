@@ -15,12 +15,14 @@ import {
   BASE_TOASTER_ERROR_MESSAGE,
   SELECT_CONSTRAINT_SENSE_OPTIONS,
   SELECT_OBJECTIVE_SENSE_OPTIONS,
+  SELECT_SOLVER_OPTIONS,
   SELECT_VAR_DOMAIN_OPTIONS,
 } from "@/shared/consts";
 import { useAppDispatch, useAppSelector } from "@/shared/hooks";
 import {
   ConstraintSenseEnum,
   ObjectiveSenseEnum,
+  SolverEnum,
   VariablesDomainEnum,
 } from "@/shared/types";
 import { ExcelUploader } from "../ExcelUploader";
@@ -40,6 +42,7 @@ import {
   selectObjectiveCoeffs,
   selectObjectiveCoeffsError,
   selectObjectiveSense,
+  selectSolver,
   selectTaskCreatorData,
   selectVarsCount,
   selectVarsDomain,
@@ -59,6 +62,7 @@ export const TaskCreator = () => {
   const constraintsCoeffs = useAppSelector(selectConstraintsCoeffs);
   const constraintsSense = useAppSelector(selectConstraintsSense);
   const constraintsRhs = useAppSelector(selectConstraintsRhs);
+  const solver = useAppSelector(selectSolver);
   const disableUploadButton = useAppSelector(selectDisableUploadButton);
   const objectiveCoeffsError = useAppSelector(selectObjectiveCoeffsError);
   const constraintsCoeffsError = useAppSelector(selectConstraintsCoeffsError);
@@ -72,6 +76,7 @@ export const TaskCreator = () => {
     setConstraintsCoeffs,
     setConstraintsSense,
     setConstraintsRhs,
+    setSolver,
   } = taskCreatorActions;
   const [solveMilp, { error }] = useSolveMilpMutation();
   const { validate } = useValidateData();
@@ -266,6 +271,14 @@ export const TaskCreator = () => {
               Добавить
             </Button>
           </Flex>
+        </Flex>
+        <Flex gap={2}>
+          <Text variant="subheader-3">Решатель</Text>
+          <Select
+            options={SELECT_SOLVER_OPTIONS}
+            onUpdate={(value) => dispatch(setSolver(value[0] as SolverEnum))}
+            value={[solver]}
+          />
         </Flex>
         <Flex gap={2} alignItems={"center"}>
           <Button

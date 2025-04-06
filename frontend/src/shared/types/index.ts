@@ -16,3 +16,9 @@ export enum ConstraintSenseEnum {
   MORE_OR_EQUAL = ">=",
   EQUAL = "=",
 }
+
+export enum SolverEnum {
+  GLPK = "glpk",
+  CBC = "cbc",
+  SCIP = "scip",
+}

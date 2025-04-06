@@ -1,16 +1,17 @@
+import { SolverEnum } from "@/shared/types";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createSlice } from "@reduxjs/toolkit";
 
 export interface ExcelUploaderState {
   value: string | null;
-  file: File | null;
+  solver: SolverEnum;
 
   disableUploadButton: boolean | null;
 }
 
 const initialState: ExcelUploaderState = {
   value: null,
-  file: null,
+  solver: SolverEnum.GLPK,
 
   disableUploadButton: false,
 };
@@ -22,8 +23,8 @@ export const excelUploaderSlice = createSlice({
     setValue: (state, action: PayloadAction<string | null>) => {
       state.value = action.payload;
     },
-    setFile: (state, action: PayloadAction<File | null>) => {
-      state.file = action.payload;
+    setSolver: (state, action: PayloadAction<SolverEnum>) => {
+      state.solver = action.payload;
     },
 
     setDisableUploadButton: (state, action: PayloadAction<boolean>) => {

@@ -1,6 +1,7 @@
 import {
   ConstraintSenseEnum,
   ObjectiveSenseEnum,
+  SolverEnum,
   VariablesDomainEnum,
 } from "@/shared/types";
 import type { PayloadAction } from "@reduxjs/toolkit";
@@ -16,6 +17,7 @@ export interface TaskCreatorState {
   constraintsCoeffs: Array<null | string>[];
   constraintsSense: ConstraintSenseEnum[];
   constraintsRhs: Array<null | string>;
+  solver: SolverEnum;
 
   disableUploadButton: boolean | null;
 
@@ -42,6 +44,7 @@ const initialState: TaskCreatorState = {
     ConstraintSenseEnum.LESS_OR_EQUAL,
   ],
   constraintsRhs: [null, null],
+  solver: SolverEnum.GLPK,
 
   disableUploadButton: false,
 
@@ -141,6 +144,9 @@ export const taskCreatorSlice = createSlice({
       } = action;
       state.constraintsRhs[index] = rhs;
       state.constraintsCoeffsError = null;
+    },
+    setSolver: (state, action: PayloadAction<SolverEnum>) => {
+      state.solver = action.payload;
     },
 
     setDisableUploadButton: (state, action: PayloadAction<boolean>) => {

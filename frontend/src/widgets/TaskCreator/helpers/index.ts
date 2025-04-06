@@ -57,5 +57,6 @@ export const convertCreatingTaskDataToMilpDTO = (
       rhs: Number(data.constraintsRhs[i]),
       sense: data.constraintsSense[i],
     })),
+    solver: data.solver,
   };
 };

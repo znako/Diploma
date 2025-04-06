@@ -93,8 +93,8 @@ def create_model(data):
     model.dual = Suffix(direction=Suffix.IMPORT)
     return model
 
-def solve_model(model):
-    solver = SolverFactory('glpk')
+def solve_model(model, solver):
+    solver = SolverFactory(solver)
     result = solver.solve(model)
 
     if result.solver.status == SolverStatus.ok:
@@ -175,7 +175,7 @@ def solve_milp_route():
 
     # Запускаем фоновую задачу
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(process_excel_task, task_id, model)
+    executor.submit(process_excel_task, task_id, model, data["solver"])
     executor.shutdown(wait=False)  # не блокируем поток
     return jsonify({'task_id': task_id}), 202
 
@@ -325,7 +325,7 @@ def generate_excel_from_conditions(conditions: dict) -> str:
 
 
 # Фоновая функция для обработки Excel–запроса и решения задачи
-def process_excel_task(task_id, model):
+def process_excel_task(task_id, model, solver):
     tasks[task_id] = {"status": "processing", "log": [], "result": None}
     db = SessionLocal()
     # print(db.query(Task).filter(Task.task_id).first())
@@ -336,7 +336,7 @@ def process_excel_task(task_id, model):
         start_time = datetime.now(timezone.utc)
         # Используем ThreadPoolExecutor для решения с имитацией промежуточных сообщений.
         with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(solve_model, model)
+            future = executor.submit(solve_model, model, solver)
             while not future.done():
                 if task_record.canceled == True:
                     tasks[task_id]["log"].append("Решение задачи отменено.")
@@ -370,6 +370,7 @@ def upload_excel():
     if 'file' not in request.files:
         return jsonify({'error': 'Вы не отправили файл'}), 400
 
+    solver = request.form.get("solver")
     file = request.files['file']
     if not file.filename.endswith('.xlsx'):
         return jsonify({'error': 'Файл не является Excel файлом. Загрузите файл с расширением .xlsx'}), 400
@@ -425,7 +426,7 @@ def upload_excel():
 
     # Запускаем фоновую задачу
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(process_excel_task, task_id, model)
+    executor.submit(process_excel_task, task_id, model, solver)
     executor.shutdown(wait=False)  # не блокируем поток
     return jsonify({'task_id': task_id}), 202
 

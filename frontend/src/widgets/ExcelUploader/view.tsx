@@ -5,14 +5,25 @@ import {
   BASE_TOASTER_ERROR_MESSAGE,
   SELECT_CONSTRAINT_SENSE_OPTIONS,
   SELECT_OBJECTIVE_SENSE_OPTIONS,
+  SELECT_SOLVER_OPTIONS,
   SELECT_VAR_DOMAIN_OPTIONS,
 } from "@/shared/consts";
 import { useAppDispatch, useAppSelector } from "@/shared/hooks";
-import { Button, Card, Flex, Modal, Text, useToaster } from "@gravity-ui/uikit";
+import { SolverEnum } from "@/shared/types";
+import {
+  Button,
+  Card,
+  Flex,
+  Modal,
+  Select,
+  Text,
+  useToaster,
+} from "@gravity-ui/uikit";
 import { ChangeEvent, useEffect, useState } from "react";
 import {
   selectDisableUploadButton,
   selectExcelUploaderValue,
+  selectSolver,
 } from "./selectors";
 import { excelUploaderActions } from "./slice";
 import styles from "./styles.module.css";
@@ -20,9 +31,10 @@ import styles from "./styles.module.css";
 export const ExcelUploader = () => {
   const { add } = useToaster();
   const dispatch = useAppDispatch();
-  const { setValue } = excelUploaderActions;
+  const { setValue, setSolver } = excelUploaderActions;
   const excelValue = useAppSelector(selectExcelUploaderValue);
   const disableUploadButton = useAppSelector(selectDisableUploadButton);
+  const solver = useAppSelector(selectSolver);
   const [solveMilpExcel, { error }] = useSolveMilpExcelMutation();
   const [openModal, setOpenModal] = useState(false);
 
@@ -33,6 +45,7 @@ export const ExcelUploader = () => {
     const formData = new FormData();
 
     formData.append("file", value);
+    formData.append("solver", solver);
 
     solveMilpExcel(formData);
   };
@@ -50,7 +63,6 @@ export const ExcelUploader = () => {
 
   const onChangeFileInput = (e: ChangeEvent<HTMLInputElement> | undefined) => {
     const target = e?.target;
-    // dispatch(setFile(target?.files?.[0] ?? null));
     dispatch(setValue(target?.value ?? null));
     onUploadFile(target?.files?.[0]);
     setOpenModal(false);
@@ -154,6 +166,14 @@ export const ExcelUploader = () => {
               </a>
             </Text>
           </Card>
+          <Flex gap={2}>
+            <Text variant="subheader-3">Решатель</Text>
+            <Select
+              options={SELECT_SOLVER_OPTIONS}
+              onUpdate={(value) => dispatch(setSolver(value[0] as SolverEnum))}
+              value={[solver]}
+            />
+          </Flex>
           <input
             disabled={!!disableUploadButton}
             type="file"

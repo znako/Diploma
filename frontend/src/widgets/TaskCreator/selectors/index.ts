@@ -18,6 +18,7 @@ export const selectConstraintsSense = (state: RootState) =>
   state.taskCreator.constraintsSense;
 export const selectConstraintsRhs = (state: RootState) =>
   state.taskCreator.constraintsRhs;
+export const selectSolver = (state: RootState) => state.taskCreator.solver;
 
 export const selectDisableUploadButton = (state: RootState) =>
   state.taskCreator.disableUploadButton;

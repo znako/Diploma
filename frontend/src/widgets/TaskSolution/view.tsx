@@ -1,7 +1,7 @@
 import { useCancelTaskMutation } from "@/api";
 import { openSSEConnection } from "@/api/utils";
 import { Title } from "@/shared/components/Title";
-import { TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
+import { MAP_SOLVER_OPTIONS, TASK_ID_LOCAL_STORAGE_KEY } from "@/shared/consts";
 import { useAppDispatch, useAppSelector } from "@/shared/hooks";
 import { Button, Flex, Progress, Select, Text } from "@gravity-ui/uikit";
 import cn from "classnames";
@@ -14,10 +14,13 @@ import {
   OVERFLOW_VARS_NUMBER,
   PROGRESS_BAR_VALUE,
 } from "./consts";
+import { getFormattedSolveDuration } from "./helpers";
 import {
   selectSolutionConditions,
   selectSolutionData,
   selectSolutionIsLoading,
+  selectSolutionSolveDuration,
+  selectSolutionSolver,
 } from "./selectors";
 import { taskSolutionActions } from "./slice";
 import styles from "./styles.module.css";
@@ -30,6 +33,8 @@ export const TaskSolution = () => {
   const dispatch = useAppDispatch();
   const solution = useAppSelector(selectSolutionData);
   const conditions = useAppSelector(selectSolutionConditions);
+  const solver = useAppSelector(selectSolutionSolver);
+  const solveDuration = useAppSelector(selectSolutionSolveDuration);
   const isLoading = useAppSelector(selectSolutionIsLoading);
   const { setIsLoading } = taskSolutionActions;
   const [cancelTask] = useCancelTaskMutation();
@@ -107,7 +112,16 @@ export const TaskSolution = () => {
             <a href={conditions}>Условие задачи</a>
           </Text>
         )}
+        {!!solver && (
+          <Text variant="header-1">Решатель: {MAP_SOLVER_OPTIONS[solver]}</Text>
+        )}
         <Text variant="header-1">{solution.message}</Text>
+        {!!solveDuration && (
+          <Text variant="header-1">
+            Продолжительность решения:{" "}
+            {getFormattedSolveDuration(solveDuration)}
+          </Text>
+        )}
         {solution.objective !== undefined && (
           <Text variant="header-1">
             Значение функции:{" "}

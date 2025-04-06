@@ -457,6 +457,8 @@ def task_progress(task_id):
                     payload = {}
                     payload["solution"] = task_record.solution
                     payload["conditions_excel"] = task_record.conditions_excel
+                    payload["solver"] = task_record.solver
+                    payload["solve_duration"] = (task_record.solve_time - task_record.upload_time).total_seconds() * 1000
                     
                     yield "data: " + json.dumps(payload, ensure_ascii=False) + "\n\n"
                 else:

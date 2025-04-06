@@ -1,3 +1,5 @@
+import { SolverEnum } from "@/shared/types";
+
 export type Sensitivity = {
   name: string;
   value: string;
@@ -24,4 +26,8 @@ export type SolutionResponse = {
   solution: Solution;
   /* Base64 строка, которая хранит условия задачи в excel формате */
   conditions_excel: string;
+  /* Решатель, который выбрал пользователь */
+  solver: SolverEnum;
+  /* Продолжительность решения. milliseconds */
+  solve_duration: number;
 };

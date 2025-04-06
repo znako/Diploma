@@ -52,3 +52,9 @@ export const SELECT_SOLVER_OPTIONS: Array<{
   { value: SolverEnum.CBC, content: "coin-or" },
   { value: SolverEnum.SCIP, content: "scip" },
 ];
+
+export const MAP_SOLVER_OPTIONS: Record<SolverEnum, string> = {
+  [SolverEnum.GLPK]: "glpk",
+  [SolverEnum.CBC]: "coin-or",
+  [SolverEnum.SCIP]: "scip",
+};

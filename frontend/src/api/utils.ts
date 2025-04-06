@@ -33,6 +33,8 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
       // Извлекаем решение и base64 строку Excel-файла с условиями.
       const solution = payload.solution;
       const base64Excel = payload.conditions_excel;
+      const solver = payload.solver;
+      const solveDuration = payload.solve_duration;
 
       // Декодируем base64 в бинарные данные и создаём Blob. Тип для .xlsx:
       // 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -50,6 +52,8 @@ export const openSSEConnection = (taskId: string, dispatch: AppDispatch) => {
       const excelUrl = URL.createObjectURL(blob);
       dispatch(taskSolutionActions.setSolution(solution));
       dispatch(taskSolutionActions.setCondition(excelUrl));
+      dispatch(taskSolutionActions.setSolver(solver));
+      dispatch(taskSolutionActions.setSolveDuration(solveDuration));
       dispatch(taskSolutionActions.setIsLoading(false));
       dispatch(taskCreatorActions.setDisableUploadButton(false));
       dispatch(excelUploaderActions.setDisableUploadButton(false));

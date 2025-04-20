@@ -31,12 +31,12 @@ Base = declarative_base()
 class Task(Base):
     __tablename__ = "tasks"
 
-    id = Column(Integer, primary_key=True, index=True)
-    task_id = Column(String, unique=True, index=True, nullable=False)
+    id = Column(Integer, primary_key=True, index=True) # id записи
+    task_id = Column(String, unique=True, index=True, nullable=False) # id задачи
     conditions = Column(JSON, nullable=False)  # исходные условия задачи (JSON)
     solution = Column(JSON)  # решение задачи (JSON), может быть пустым, если задача не решена
     solver = Column(String)  # решатель, который выбрал пользователь
-    conditions_excel = Column(Text)  # новое поле для хранения сгенерированного Excel файла в виде base64 строки
+    conditions_excel = Column(Text)  # поле для хранения сгенерированного Excel файла в виде base64 строки
     upload_time = Column(DateTime, default=datetime.now)  # время загрузки задачи
     solve_time = Column(DateTime)  # время завершения решения задачи
     canceled = Column(Boolean, default=False)  # отмена решения задачи пользователем
@@ -81,25 +81,25 @@ def solve_milp_route():
     return jsonify({'task_id': task_id}), 202
 
 
-# Фоновая функция для обработки запроса и решения задачи
+# Фоновая функция для решения задачи
 def process_task(task_id, model, solver):
-    db = SessionLocal()
-    task_record = db.query(Task).filter(Task.task_id == task_id).first()
-
     try:
-        start_time = datetime.now(timezone.utc)
-        # Используем ThreadPoolExecutor для решения с имитацией промежуточных сообщений.
+        # Используем ThreadPoolExecutor для решения.
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(solve_model, model, solver)
             while not future.done():
+                db = SessionLocal()
+                task_record = db.query(Task).filter(Task.task_id == task_id).first()
+                db.close()
                 if task_record.canceled == True:
                     return
                 time.sleep(1)
             solution = future.result()
 
         # Обновляем запись в БД – сохраняем решение и время завершения
+        db = SessionLocal()
+        task_record = db.query(Task).filter(Task.task_id == task_id).first()
         task_record.solution = solution
-        db.commit()
     except Exception as e:
         print(f"Ошибка: {str(e)}")
     finally:
@@ -175,7 +175,6 @@ def upload_excel():
 @app.route('/task/task_progress/<task_id>', methods=['GET'])
 def task_progress(task_id):
     def event_stream():
-        last_index = 0
         # Отправляем данные до тех пор, пока задача не завершена
         while True:
             session = SessionLocal()

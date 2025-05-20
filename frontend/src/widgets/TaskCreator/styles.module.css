@@ -1,9 +1,11 @@
 .CreatingTask {
   flex-basis: 50%;
+  max-width: 50%;
 }
 
 .input {
   width: 50px;
+  flex-shrink: 0;
   & .g-text-input__control_type_input {
     text-align: center;
   }
@@ -20,4 +22,18 @@
 
 .sendButton {
   width: fit-content;
+}
+
+.functionInput {
+  overflow-x: scroll;
+  padding-bottom: 10px;
+}
+
+.selectObjSense {
+  min-width: 160px;
+}
+
+.selectVarDomain {
+  flex-basis: 38%;
+  box-sizing: border-box;
 }

@@ -14,7 +14,7 @@ import { toaster } from "./shared/components/Toaster";
 createRoot(document.getElementById("root")!).render(
   <div className="g-root">
     <Provider store={store}>
-      <ThemeProvider theme="dark">
+      <ThemeProvider theme="light">
         <ToasterProvider toaster={toaster}>
           <App />
           <ToasterComponent />

@@ -104,6 +104,7 @@ export const TaskSolution = () => {
               options={FRACTION_DIGITS_OPTIONS}
               defaultValue={FRACTION_DIGITS_DEFAULT_VALUE}
               onUpdate={(value) => setMaximumFractionDigits(Number(value[0]))}
+              value={[String(maximumFractionDigits)]}
             />
           </Flex>
         )}

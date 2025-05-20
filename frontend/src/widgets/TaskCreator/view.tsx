@@ -135,6 +135,7 @@ export const TaskCreator = () => {
                   )
                 }
                 value={[varsDomain[varIndex]]}
+                className={styles.selectVarDomain}
               />
             ))}
           </Flex>
@@ -146,7 +147,7 @@ export const TaskCreator = () => {
               {objectiveCoeffsError}
             </Text>
           )}
-          <Flex gap={3}>
+          <Flex gap={3} className={styles.functionInput}>
             <Flex gap={2}>
               {varsArray.map((varIndex) => (
                 <Flex gap={1} key={`objective_${varIndex}`} alignItems="center">
@@ -183,6 +184,7 @@ export const TaskCreator = () => {
                   dispatch(setObjectiveSense(value[0] as ObjectiveSenseEnum))
                 }
                 value={[objectiveSense]}
+                className={styles.selectObjSense}
               />
             </Flex>
           </Flex>
@@ -194,7 +196,7 @@ export const TaskCreator = () => {
               {constraintsCoeffsError}
             </Text>
           )}
-          <Flex gap={2} direction="column">
+          <Flex gap={2} direction="column" className={styles.functionInput}>
             {constraintsArray.map((constraintIndex) => (
               <Flex key={`constraint_${constraintIndex}`} gap={4}>
                 <Flex gap={2}>

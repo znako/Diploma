@@ -100,9 +100,13 @@ def process_task(task_id, model, solver):
         db = SessionLocal()
         task_record = db.query(Task).filter(Task.task_id == task_id).first()
         task_record.solution = solution
+        finish_time = datetime.now(timezone.utc)
+        task_record.solve_time = finish_time
+        db.commit()
+        db.close()
     except Exception as e:
-        print(f"Ошибка: {str(e)}")
-    finally:
+        db = SessionLocal()
+        task_record = db.query(Task).filter(Task.task_id == task_id).first()
         finish_time = datetime.now(timezone.utc)
         task_record.solve_time = finish_time
         db.commit()

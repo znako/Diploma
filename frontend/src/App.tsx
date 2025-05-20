@@ -9,7 +9,7 @@ function App() {
   return (
     <Container gutters="10">
       <Header />
-      <Flex>
+      <Flex gap={6}>
         <TaskCreator />
         <TaskSolution />
       </Flex>
